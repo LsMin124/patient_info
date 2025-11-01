@@ -1,6 +1,4 @@
-# URP 프로젝트 API 명세서
-
-URP(User Research Project)의 환자 측정 데이터 관리를 위한 API 명세서입니다.
+# API 명세서
 
 ## 🔑 기본 정보
 
