@@ -3,6 +3,7 @@ package com.project.urp.service;
 import com.project.urp.domain.Measurement;
 import com.project.urp.domain.DataPoint;
 import com.project.urp.domain.Patient;
+import com.project.urp.dto.PatientDto;
 import com.project.urp.repository.MeasurementRepository;
 import com.project.urp.repository.DataPointRepository;
 import com.project.urp.repository.PatientRepository;
@@ -77,7 +78,7 @@ public class MeasurementService {
         patientRepository.findByPatientId(patientId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid patient Id: " + patientId));
 
-        List<Measurement> measurements = measurementRepository.findByPatient_Patient_Id(patientId);
+        List<Measurement> measurements = measurementRepository.findByPatient_PatientId(patientId);
 
         return measurements.stream()
                 .map(measurement -> new MeasurementSummaryDto(measurement))
@@ -94,5 +95,23 @@ public class MeasurementService {
         return dataPoints.stream()
                 .map(dp -> new DataPointDto(dp.getTimeOffsetMs(), dp.getKgValue()))
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public Patient createPatient(PatientDto patientDto) {
+        // (선택적) 환자 ID 중복 검사
+        patientRepository.findByPatientId(patientDto.getPatientId()).ifPresent(p -> {
+            throw new IllegalArgumentException("Patient ID already exists: " + p.getPatientId());
+        });
+
+        Patient newPatient = new Patient(
+                patientDto.getPatientId(),
+                patientDto.getName(),
+                patientDto.getAge(),
+                patientDto.getSex(),
+                patientDto.getHeight(),
+                patientDto.getWeight()
+        );
+        return patientRepository.save(newPatient);
     }
 }

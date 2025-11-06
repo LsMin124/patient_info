@@ -118,6 +118,91 @@ async function fetchChartData(sessionId) {
     }
 }
 
+// ⭐️👇 등록 폼 DOM 요소 추가
+const registerButton = document.getElementById("register-button");
+const newPatientIdInput = document.getElementById("new-patient-id");
+const newPatientNameInput = document.getElementById("new-patient-name");
+const newPatientSexInput = document.getElementById("new-patient-sex");
+const newPatientAgeInput = document.getElementById("new-patient-age");
+const newPatientHeightInput = document.getElementById("new-patient-height");
+const newPatientWeightInput = document.getElementById("new-patient-weight");
+const registerStatus = document.getElementById("register-status");
+
+
+// --- 2. 이벤트 리스너 ---
+
+// ... (기존 DOMContentLoaded, patientSelect.change, sessionSelect.change) ...
+
+// ⭐️👇 등록 버튼 클릭 이벤트 리스너 추가
+registerButton.addEventListener("click", registerPatient);
+
+
+// --- 3. API 호출 함수 ---
+
+// ... (기존 fetchPatients, fetchSessions, fetchChartData) ...
+
+
+// ⭐️👇 이 '환자 등록' 함수를 새로 추가하세요.
+/** (POST /api/v1/patients) 새 환자를 서버에 등록합니다. */
+async function registerPatient() {
+    const patientId = newPatientIdInput.value;
+    const name = newPatientNameInput.value;
+    const sex = newPatientSexInput.value;
+    const age = newPatientAgeInput.value;
+    const height = newPatientHeightInput.value;
+    const weight = newPatientWeightInput.value;
+
+
+    // 간단한 유효성 검사
+    if (!patientId || !name) {
+        registerStatus.textContent = "환자 ID와 이름을 모두 입력하세요.";
+        registerStatus.style.color = "red";
+        return;
+    }
+
+    registerStatus.textContent = "등록 중...";
+    registerStatus.style.color = "black";
+    registerButton.disabled = true;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/v1/patients`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                patientId: patientId, // DTO의 'patientId' 키와 일치
+                name: name,            // DTO의 'name' 키와 일치
+                age: age,
+                sex: sex,
+                height: height,
+                weight: weight
+            })
+        });
+
+        if (!response.ok) {
+            // (서버에서 보낸 에러 메시지 (예: 중복 ID)를 표시)
+            const errorData = await response.json();
+            throw new Error(errorData.message || `서버 오류: ${response.status}`);
+        }
+
+        // 성공
+        registerStatus.textContent = `환자 '${name}' (이)가 성공적으로 등록되었습니다.`;
+        registerStatus.style.color = "green";
+        newPatientIdInput.value = "";
+        newPatientNameInput.value = "";
+
+        // ⭐️⭐️⭐️ (매우 중요) 환자 드롭다운 목록을 새로고침합니다.
+        await fetchPatients();
+
+    } catch (error) {
+        console.error("환자 등록 실패:", error);
+        registerStatus.textContent = `등록 실패: ${error.message}`;
+        registerStatus.style.color = "red";
+    } finally {
+        registerButton.disabled = false;
+    }
+}
 
 // --- 4. 차트 및 UI 헬퍼 함수 ---
 
