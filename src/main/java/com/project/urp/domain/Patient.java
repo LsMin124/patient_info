@@ -31,5 +31,13 @@ public class Patient {
 
     @Column(nullable = false)
     private Float weight;
-    // (필요시 생년월일, 성별 등 기타 정보 추가)
+
+    public Patient(String patientId, String name, Integer age, String sex, Float height, Float weight ) {
+        this.patientId = patientId;
+        this.name = name;
+        this.age = age;
+        this.sex = sex;
+        this.height = height;
+        this.weight = weight;
+    }
 }

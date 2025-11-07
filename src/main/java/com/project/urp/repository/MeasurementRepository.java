@@ -9,5 +9,5 @@ import java.util.List;
 
 @Repository
 public interface MeasurementRepository extends JpaRepository<Measurement, Long> {
-    List<Measurement> findByPatient_Patient_Id(String patient_id);
+    List<Measurement> findByPatient_PatientId(String patient_id);
 }

@@ -2,11 +2,13 @@ package com.project.urp.controller;
 
 import com.project.urp.domain.Measurement;
 import com.project.urp.domain.Patient;
+import com.project.urp.dto.PatientDto;
 import com.project.urp.service.MeasurementService;
 import com.project.urp.dto.DataPointDto;
 import com.project.urp.dto.MeasurementSummaryDto;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -60,5 +62,14 @@ public class MeasurementController {
             @PathVariable("id") Long measurementId) {
         List<DataPointDto> dataPoints = measurementService.findDataPointsByMeasurement(measurementId);
         return ResponseEntity.ok(dataPoints);
+    }
+
+    /**
+     * (POST /api/v1/patients) 새 환자 등록
+     */
+    @PostMapping("/patients")
+    public ResponseEntity<Patient> createPatient(@RequestBody PatientDto patientDto) {
+        Patient createdPatient = measurementService.createPatient(patientDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdPatient);
     }
 }

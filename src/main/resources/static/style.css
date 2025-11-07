@@ -33,3 +33,41 @@ header {
 .hidden {
     display: none;
 }
+.registration-form {
+    text-align: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    max-width: 1000px; /* 차트와 너비 맞춤 */
+    margin: 0 auto 20px auto; /* 가운데 정렬 */
+}
+.registration-form h3 {
+    margin-top: 0;
+    text-align: left;
+}
+.registration-form input {
+    padding: 8px;
+    margin: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 200px;
+}
+.registration-form button {
+    padding: 8px 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+.registration-form button:hover {
+    background-color: #0056b3;
+}
+#register-status {
+    font-size: 0.9em;
+    margin-top: 10px;
+    min-height: 1.2em; /* 메시지가 없을 때도 공간 유지 */
+}
