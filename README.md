@@ -60,9 +60,9 @@
     * **예시**:
         ```json
         [
-          { "timestamp": 1678886400, "ax": 0.01, "ay": 0.98, "az": -0.05 },
-          { "timestamp": 1678886401, "ax": 0.02, "ay": 0.97, "az": -0.04 },
-          { "timestamp": 1678886402, "ax": 0.01, "ay": 0.99, "az": -0.05 }
+           { "timeoffset_ms": 10, "kg_value": 1.98 },
+           { "timeoffset_ms": 20, "kg_value": 2.12 },
+           { "timeoffset_ms": 30, "kg_value": 2.14 },
         ]
         ```
 * **응답 (Response)**: `200 OK`
