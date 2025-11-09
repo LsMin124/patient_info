@@ -1,9 +1,6 @@
 // app.js
 
-// 🚨 Spring Boot 서버(라즈베리파이)의 주소로 변경하세요.
-// Nginx를 쓴다면 "http://your.domain.com"
-// 내부망이라면 "http://192.168.0.10:8080"
-const API_BASE_URL = "http://119.194.17.62:8080"; // 👈 예시 주소
+const API_BASE_URL = "http://119.194.17.62:8080"; // api 서버 주소
 
 // --- 1. 전역 변수 및 DOM 요소 ---
 let measurementChart; // 차트 인스턴스를 저장할 변수
@@ -118,7 +115,7 @@ async function fetchChartData(sessionId) {
     }
 }
 
-// ⭐️👇 등록 폼 DOM 요소 추가
+// 등록 폼 DOM 요소 추가
 const registerButton = document.getElementById("register-button");
 const newPatientIdInput = document.getElementById("new-patient-id");
 const newPatientNameInput = document.getElementById("new-patient-name");
@@ -131,18 +128,10 @@ const registerStatus = document.getElementById("register-status");
 
 // --- 2. 이벤트 리스너 ---
 
-// ... (기존 DOMContentLoaded, patientSelect.change, sessionSelect.change) ...
-
-// ⭐️👇 등록 버튼 클릭 이벤트 리스너 추가
 registerButton.addEventListener("click", registerPatient);
-
 
 // --- 3. API 호출 함수 ---
 
-// ... (기존 fetchPatients, fetchSessions, fetchChartData) ...
-
-
-// ⭐️👇 이 '환자 등록' 함수를 새로 추가하세요.
 /** (POST /api/v1/patients) 새 환자를 서버에 등록합니다. */
 async function registerPatient() {
     const patientId = newPatientIdInput.value;
@@ -192,7 +181,6 @@ async function registerPatient() {
         newPatientIdInput.value = "";
         newPatientNameInput.value = "";
 
-        // ⭐️⭐️⭐️ (매우 중요) 환자 드롭다운 목록을 새로고침합니다.
         await fetchPatients();
 
     } catch (error) {
@@ -213,7 +201,7 @@ function initChart() {
         data: {
             labels: [],
             datasets: [{
-                label: '측정 값 (kg)',
+                label: '측정 값 (N)',
                 data: [],
                 borderColor: 'rgb(75, 192, 192)',
                 tension: 0.1, // 약간 부드럽게
@@ -223,10 +211,20 @@ function initChart() {
         options: {
             scales: {
                 x: {
-                    title: { display: true, text: '시간 (ms)' }
+                    type: 'linear',
+                    title: { display: true, text: '시간 (s)' },
+                    min: 0,
+                    max: 5000,
+                    ticks : {
+                        stepSize: 1000,
+
+                        callback: function (value, index, values) {
+                            return (value / 1000) + 's';
+                        }
+                    }
                 },
                 y: {
-                    title: { display: true, text: '무게 (kg)' },
+                    title: { display: true, text: '힘 (N)' },
                     beginAtZero: true
                 }
             },
@@ -240,11 +238,13 @@ function updateChart(dataPoints) {
     if (!measurementChart) return;
 
     // DataPointDto[]를 Chart.js가 이해하는 형식으로 변환
-    const labels = dataPoints.map(dp => dp.timeOffsetMs);
-    const data = dataPoints.map(dp => dp.kgValue);
+    const chartData = dataPoints.map(dp => ({
+        x: dp.timeOffsetMs,
+        y: dp.kgValue
+    }));
 
-    measurementChart.data.labels = labels;
-    measurementChart.data.datasets[0].data = data;
+    measurementChart.data.labels = [];
+    measurementChart.data.datasets[0].data = chartData;
     measurementChart.update();
 }
 
@@ -271,3 +271,4 @@ function setLoading(isLoading) {
         loadingIndicator.classList.add("hidden");
     }
 }
+
