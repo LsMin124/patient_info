@@ -211,7 +211,17 @@ function initChart() {
         options: {
             scales: {
                 x: {
-                    title: { display: true, text: '시간 (ms)' }
+                    type: 'linear',
+                    title: { display: true, text: '시간 (s)' },
+                    min: 0,
+                    max: 5000,
+                    ticks : {
+                        stepSize: 1000,
+
+                        callback: function (value, index, values) {
+                            return (value / 1000) + 's';
+                        }
+                    }
                 },
                 y: {
                     title: { display: true, text: '힘 (N)' },
@@ -228,11 +238,13 @@ function updateChart(dataPoints) {
     if (!measurementChart) return;
 
     // DataPointDto[]를 Chart.js가 이해하는 형식으로 변환
-    const labels = dataPoints.map(dp => dp.timeOffsetMs);
-    const data = dataPoints.map(dp => dp.kgValue);
+    const chartData = dataPoints.map(dp => ({
+        x: dp.timeOffsetMs,
+        y: dp.kgValue
+    }));
 
-    measurementChart.data.labels = labels;
-    measurementChart.data.datasets[0].data = data;
+    measurementChart.data.labels = [];
+    measurementChart.data.datasets[0].data = chartData;
     measurementChart.update();
 }
 
@@ -259,3 +271,4 @@ function setLoading(isLoading) {
         loadingIndicator.classList.add("hidden");
     }
 }
+
