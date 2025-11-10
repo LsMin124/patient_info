@@ -108,9 +108,27 @@
     * **예시**:
         ```json
         [
-          { "timestamp": 1678886400, "ax": 0.01, "ay": 0.98, "az": -0.05 },
-          { "timestamp": 1678886401, "ax": 0.02, "ay": 0.97, "az": -0.04 },
-          { "timestamp": 1678886402, "ax": 0.01, "ay": 0.99, "az": -0.05 },
+          [
+  {
+    "timeOffsetMs": 0,
+    "kgValue": 0
+  },
+  {
+    "timeOffsetMs": 49,
+    "kgValue": 0
+  },
+  {
+    "timeOffsetMs": 103,
+    "kgValue": 0.00917744591680136
+  },
+  {
+    "timeOffsetMs": 165,
+    "kgValue": 0.375255566375878
+  },
+  {
+    "timeOffsetMs": 214,
+    "kgValue": 1.2980987391209
+  },
           ...
         ]
         ```
