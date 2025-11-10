@@ -109,26 +109,26 @@
         ```json
         [
           [
-  {
-    "timeOffsetMs": 0,
-    "kgValue": 0
-  },
-  {
-    "timeOffsetMs": 49,
-    "kgValue": 0
-  },
-  {
-    "timeOffsetMs": 103,
-    "kgValue": 0.00917744591680136
-  },
-  {
-    "timeOffsetMs": 165,
-    "kgValue": 0.375255566375878
-  },
-  {
-    "timeOffsetMs": 214,
-    "kgValue": 1.2980987391209
-  },
+           {
+             "timeOffsetMs": 0,
+             "kgValue": 0
+           },
+           {
+             "timeOffsetMs": 49,
+             "kgValue": 0
+           },
+           {
+             "timeOffsetMs": 103,
+             "kgValue": 0.00917744591680136
+           },
+           {
+             "timeOffsetMs": 165,
+             "kgValue": 0.375255566375878
+           },
+           {
+             "timeOffsetMs": 214,
+             "kgValue": 1.2980987391209
+           },
           ...
         ]
         ```
