@@ -60,9 +60,9 @@
     * **예시**:
         ```json
         [
-           { "timeoffset_ms": 10, "kg_value": 1.98 },
-           { "timeoffset_ms": 20, "kg_value": 2.12 },
-           { "timeoffset_ms": 30, "kg_value": 2.14 },
+           { "time_offset_ms": 10, "kg_value": 1.98 },
+           { "time_offset_ms": 20, "kg_value": 2.12 },
+           { "time_offset_ms": 30, "kg_value": 2.14 },
         ]
         ```
 * **응답 (Response)**: `200 OK`
