@@ -17,6 +17,7 @@ export default defineConfig({
         branches: 75,
         statements: 80,
       },
+      include: ['src/**/*.{ts,tsx}'],
       exclude: [
         'dist/**',
         'node_modules/**',
@@ -24,6 +25,9 @@ export default defineConfig({
         '**/*.d.ts',
         'src/test/**',
         'src/main.tsx',
+        '**/__tests__/**',
+        '**/*.{test,spec}.{ts,tsx}',
+        'e2e/**',
       ],
     },
   },
