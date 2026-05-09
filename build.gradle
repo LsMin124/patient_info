@@ -39,3 +39,53 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+// ---------------------------------------------------------------------------
+// Frontend integration
+// ---------------------------------------------------------------------------
+// The Vite-built React SPA in `frontend/` is copied into Spring Boot's
+// classpath static resources at build time. Sync (not Copy) is used so legacy
+// files in `src/main/resources/static/` are removed automatically when the
+// frontend build no longer produces them (cutover-friendly per IMPL_SPEC §7.14).
+//
+// Toolchain note: pnpm is invoked via `corepack pnpm@9.15.9` because the dev
+// environment may not have a global pnpm binary; corepack ships with Node 18+.
+// ---------------------------------------------------------------------------
+
+def pnpmCommand = ['corepack', 'pnpm@9.15.9']
+def frontendDir = file('frontend')
+
+tasks.register('frontendInstall', Exec) {
+    group = 'frontend'
+    description = 'Install frontend dependencies via pnpm.'
+    workingDir = frontendDir
+    commandLine(*pnpmCommand, 'install', '--frozen-lockfile')
+    inputs.file(file('frontend/package.json'))
+    inputs.file(file('frontend/pnpm-lock.yaml'))
+    outputs.dir(file('frontend/node_modules'))
+}
+
+tasks.register('frontendBuild', Exec) {
+    group = 'frontend'
+    description = 'Build the frontend SPA (vite build).'
+    dependsOn 'frontendInstall'
+    workingDir = frontendDir
+    commandLine(*pnpmCommand, 'build')
+    inputs.dir(file('frontend/src'))
+    inputs.file(file('frontend/index.html'))
+    inputs.file(file('frontend/vite.config.ts'))
+    inputs.file(file('frontend/tsconfig.json'))
+    inputs.file(file('frontend/tsconfig.node.json'))
+    inputs.file(file('frontend/package.json'))
+    outputs.dir(file('frontend/dist'))
+}
+
+tasks.register('frontendSync', Sync) {
+    group = 'frontend'
+    description = 'Copy frontend dist into Spring Boot static resources (Sync removes stale files).'
+    dependsOn 'frontendBuild'
+    from(file('frontend/dist'))
+    into(file('src/main/resources/static'))
+}
+
+processResources.dependsOn 'frontendSync'
