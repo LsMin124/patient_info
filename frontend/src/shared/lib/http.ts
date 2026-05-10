@@ -29,6 +29,24 @@ export class ApiError extends Error {
 const NETWORK_STATUS = 0
 const PARSE_STATUS = 422
 
+/**
+ * Map a non-2xx status code to a generic, user-safe message. The mapping is
+ * intentionally coarse — UI surfaces (toast, error banner) render this string
+ * directly so it must never contain server-provided detail. Callers that need
+ * status-specific UX (e.g. "invalid input — see fields") should branch on
+ * `error.status` rather than parse the message.
+ */
+function genericMessageForStatus(status: number): string {
+  if (status === 400) return '잘못된 요청입니다.'
+  if (status === 401) return '인증이 필요합니다.'
+  if (status === 403) return '접근 권한이 없습니다.'
+  if (status === 404) return '요청한 리소스를 찾을 수 없습니다.'
+  if (status === 409) return '이미 존재하는 데이터입니다.'
+  if (status === 422) return '입력값을 확인해 주세요.'
+  if (status >= 500) return '서버에 일시적인 문제가 발생했습니다.'
+  return `요청이 실패했습니다 (${status})`
+}
+
 interface RequestOptions {
   signal?: AbortSignal
   headers?: Record<string, string>
@@ -67,17 +85,20 @@ async function request<TSchema extends ZodTypeAny>(
   }
 
   if (!response.ok) {
-    let errorMessage = `${method} ${path} failed with status ${response.status}`
+    // Build a user-safe message from the status code only. Never inline a
+    // server-provided string into ApiError.message — Spring Boot exception
+    // messages have historically leaked patient identifiers (e.g.
+    // "Invalid patient Id: p001") via IllegalArgumentException, and the
+    // backend has no @ControllerAdvice yet to sanitize them. The full
+    // parsed body is preserved on `cause` so logs / error trackers keep
+    // the diagnostic detail without it surfacing in the UI.
+    let serverDetail: unknown = undefined
     try {
-      const errBody = (await response.json()) as { error?: string; message?: string }
-      const detail = errBody.error ?? errBody.message
-      if (typeof detail === 'string' && detail.length > 0) {
-        errorMessage = detail
-      }
+      serverDetail = await response.json()
     } catch {
-      // Fall through with the status-only message.
+      // body was non-JSON or empty; ignore
     }
-    throw new ApiError(errorMessage, response.status)
+    throw new ApiError(genericMessageForStatus(response.status), response.status, serverDetail)
   }
 
   // 204 No Content / 200 with empty body — only valid for the void-shaped
