@@ -50,4 +50,44 @@ describe('Modal', () => {
     await user.click(document.querySelector('.modal-backdrop')!)
     expect(onClose).toHaveBeenCalled()
   })
+
+  it('Tab wraps focus from last focusable back to first', async () => {
+    const user = userEvent.setup()
+    render(
+      <Modal isOpen={true} onClose={() => {}} title="t">
+        <input aria-label="first" />
+        <input aria-label="middle" />
+        <button type="button">last</button>
+      </Modal>,
+    )
+    const closeBtn = screen.getByRole('button', { name: '닫기' })
+    const lastBtn = screen.getByRole('button', { name: 'last' })
+
+    // Focus the last interactive element directly (jsdom does not fire
+    // requestAnimationFrame synchronously, so the modal's initial-focus
+    // effect may not have run yet — but the focus-trap key handler does
+    // not depend on it; it computes the focusable list each Tab event).
+    lastBtn.focus()
+    expect(document.activeElement).toBe(lastBtn)
+
+    await user.tab()
+    expect(document.activeElement).toBe(closeBtn)
+  })
+
+  it('Shift+Tab wraps focus from first focusable back to last', async () => {
+    const user = userEvent.setup()
+    render(
+      <Modal isOpen={true} onClose={() => {}} title="t">
+        <input aria-label="first" />
+        <button type="button">last</button>
+      </Modal>,
+    )
+    const closeBtn = screen.getByRole('button', { name: '닫기' })
+    const lastBtn = screen.getByRole('button', { name: 'last' })
+
+    closeBtn.focus()
+    expect(document.activeElement).toBe(closeBtn)
+    await user.tab({ shift: true })
+    expect(document.activeElement).toBe(lastBtn)
+  })
 })
