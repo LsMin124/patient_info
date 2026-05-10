@@ -6,6 +6,7 @@ import App from './App'
 import './styles/reset.css'
 import './styles/tokens.css'
 import './styles/global.css'
+import './shared/ui/components.css'
 
 const rootElement = document.getElementById('root')
 if (!rootElement) {
