@@ -1,8 +1,14 @@
+import { BrowserRouter } from 'react-router-dom'
+
+import { Providers } from './app/providers'
+import { AppRoutes } from './app/routes'
+
 export default function App() {
   return (
-    <main>
-      <h1>Hello, Patient Info</h1>
-      <p>Phase 0 scaffold — UI shell will arrive in Phase 2.</p>
-    </main>
+    <Providers>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </Providers>
   )
 }
