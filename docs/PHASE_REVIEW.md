@@ -105,6 +105,6 @@ git checkout -b phase/(N+1)-<topic>
 
 | 회차 | 시작 | 머지 SHA | reviewer 호출 | 적용된 fix 카테고리 | IMPL_SPEC 절 |
 |---|---|---|---|---|---|
-| post-Phase-2 | 2026-05-10 | (이번 머지 시 채움) | typescript / java / security | 자격증명 외부화, Number 캐스트, sourcemap hidden, Locale/Theme Context, http sanitization, EM clear, 값 단언, Modal/Toast 테스트, fixture 가명화 | `IMPL_SPEC.md §8` |
+| post-Phase-2 | 2026-05-10 | 951e374 | typescript / java / security | 자격증명 외부화, Number 캐스트, sourcemap hidden, Locale/Theme Context, http sanitization, EM clear, 값 단언, Modal/Toast 테스트, fixture 가명화 | `IMPL_SPEC.md §8` |
 
 > 매 phase 종료 시 위 표에 1행 추가.
