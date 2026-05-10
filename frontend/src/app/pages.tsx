@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 
+import { PatientDetail } from '../features/patients/PatientDetail'
+import { PatientList } from '../features/patients/PatientList'
 import { useT } from '../shared/hooks/useT'
 import { Button } from '../shared/ui/Button'
 import { EmptyState } from '../shared/ui/EmptyState'
@@ -25,25 +27,11 @@ export function DashboardPage() {
 }
 
 export function PatientsPage() {
-  const { t } = useT()
-  return (
-    <div>
-      <h1>{t('patient.list.title')}</h1>
-      <EmptyState
-        title={t('patient.list.empty')}
-        description="Phase 3에서 환자 목록·검색·등록 기능이 추가됩니다."
-      />
-    </div>
-  )
+  return <PatientList />
 }
 
 export function PatientDetailPage() {
-  return (
-    <div>
-      <h1>환자 상세</h1>
-      <EmptyState title="준비 중" description="Phase 3 T21에서 구현됩니다." />
-    </div>
-  )
+  return <PatientDetail />
 }
 
 export function SessionDetailPage() {
