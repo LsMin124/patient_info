@@ -5,9 +5,9 @@ import { Input } from '../Input'
 
 describe('Input', () => {
   it('connects label to input via htmlFor/id', () => {
-    render(<Input label="이름" defaultValue="이승민" />)
+    render(<Input label="이름" defaultValue="테스트환자A" />)
     const input = screen.getByLabelText('이름')
-    expect(input).toHaveValue('이승민')
+    expect(input).toHaveValue('테스트환자A')
   })
 
   it('renders hint and connects aria-describedby', () => {

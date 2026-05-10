@@ -8,11 +8,19 @@ const DEFAULT_DURATION_MS = 4000
 interface ToastProviderProps {
   children: ReactNode
   defaultDurationMs?: number
+  /**
+   * Accessible label for the live-region. Default '알림' keeps the provider
+   * usable standalone (e.g. in unit tests without a LocaleProvider). The
+   * app-level wiring in `app/providers.tsx` passes the locale-aware value
+   * via `t('common.notifications')` so screen readers see the right language.
+   */
+  regionLabel?: string
 }
 
 export function ToastProvider({
   children,
   defaultDurationMs = DEFAULT_DURATION_MS,
+  regionLabel = '알림',
 }: ToastProviderProps) {
   const [toasts, setToasts] = useState<Toast[]>([])
   const counterRef = useRef(0)
@@ -50,7 +58,7 @@ export function ToastProvider({
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="toast-region" role="region" aria-live="polite" aria-label="알림">
+      <div className="toast-region" role="region" aria-live="polite" aria-label={regionLabel}>
         {toasts.map((t) => (
           <div key={t.id} className={`toast toast--${t.variant}`}>
             <span>{t.message}</span>

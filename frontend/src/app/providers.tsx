@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
 
 import { ThemeProvider } from '../shared/hooks/ThemeProvider'
+import { useT } from '../shared/hooks/useT'
 import { LocaleProvider } from '../shared/i18n/LocaleProvider'
 import { ToastProvider } from '../shared/ui/Toast'
 
@@ -47,10 +48,20 @@ export function Providers({ children }: ProvidersProps) {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <LocaleProvider>
-            <ToastProvider>{children}</ToastProvider>
+            <LocalizedToastProvider>{children}</LocalizedToastProvider>
           </LocaleProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   )
+}
+
+/**
+ * Inner wrapper so the live-region aria-label is locale-aware. Lives inside
+ * LocaleProvider so useT() resolves; ToastProvider stays standalone-friendly
+ * for unit tests via its default regionLabel.
+ */
+function LocalizedToastProvider({ children }: { children: ReactNode }) {
+  const { t } = useT()
+  return <ToastProvider regionLabel={t('common.notifications')}>{children}</ToastProvider>
 }
