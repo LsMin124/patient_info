@@ -25,7 +25,7 @@ class ReadApiContractTest extends ApiContractTestBase {
     @Test
     @DisplayName("GET /patients/{id}/measurements returns camelCase keys")
     void getMeasurementsByPatient_returnsCamelCaseKeys() throws Exception {
-        Patient p = seedPatient("p001", "이승민");
+        Patient p = seedPatient("p001", "테스트환자A");
         Measurement m = seedMeasurement(p, "L knee");
         m.setEndTime(LocalDateTime.now());
         measurementRepository.save(m);
@@ -42,7 +42,7 @@ class ReadApiContractTest extends ApiContractTestBase {
     @Test
     @DisplayName("startTime serializes as ISO-8601 string (not numeric timestamp)")
     void getMeasurementsByPatient_startTimeIsIso8601String() throws Exception {
-        Patient p = seedPatient("p001", "이승민");
+        Patient p = seedPatient("p001", "테스트환자A");
         seedMeasurement(p, "iso-check");
 
         mockMvc.perform(get("/api/v1/patients/p001/measurements"))
@@ -54,7 +54,7 @@ class ReadApiContractTest extends ApiContractTestBase {
     @Test
     @DisplayName("In-progress session: endTime is null")
     void getMeasurementsByPatient_inProgressSession_endTimeIsNull() throws Exception {
-        Patient p = seedPatient("p001", "이승민");
+        Patient p = seedPatient("p001", "테스트환자A");
         seedMeasurement(p, "in-progress");
         // Do not call setEndTime — leaves it null per JPA, mirroring a session the device
         // started but has not yet stopped.
@@ -70,7 +70,7 @@ class ReadApiContractTest extends ApiContractTestBase {
     @Test
     @DisplayName("memo can be null on the wire when not provided")
     void getMeasurementsByPatient_memoCanBeNull() throws Exception {
-        Patient p = seedPatient("p001", "이승민");
+        Patient p = seedPatient("p001", "테스트환자A");
         Measurement m = seedMeasurement(p, null);
         m.setEndTime(LocalDateTime.now());
         measurementRepository.save(m);
@@ -83,7 +83,7 @@ class ReadApiContractTest extends ApiContractTestBase {
     @Test
     @DisplayName("GET /measurements/{id}/data returns camelCase keys ordered by timeOffsetMs ASC")
     void getDataPoints_returnsCamelCaseKeysAndOrderedAsc() throws Exception {
-        Patient p = seedPatient("p001", "이승민");
+        Patient p = seedPatient("p001", "테스트환자A");
         Measurement m = seedMeasurement(p, "ordering");
 
         // Insert in deliberately reversed order — service layer must sort ASC.
@@ -103,7 +103,7 @@ class ReadApiContractTest extends ApiContractTestBase {
     @Test
     @DisplayName("GET /measurements/{id}/data returns empty array for measurement with no data")
     void getDataPoints_emptyMeasurement_returnsEmptyArray() throws Exception {
-        Patient p = seedPatient("p001", "이승민");
+        Patient p = seedPatient("p001", "테스트환자A");
         Measurement m = seedMeasurement(p, "empty");
 
         mockMvc.perform(get("/api/v1/measurements/" + m.getId() + "/data"))

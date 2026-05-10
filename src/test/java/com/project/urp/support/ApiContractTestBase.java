@@ -7,6 +7,8 @@ import com.project.urp.domain.Patient;
 import com.project.urp.repository.DataPointRepository;
 import com.project.urp.repository.MeasurementRepository;
 import com.project.urp.repository.PatientRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -40,6 +42,20 @@ public abstract class ApiContractTestBase {
 
     @Autowired
     protected DataPointRepository dataPointRepository;
+
+    @PersistenceContext
+    protected EntityManager entityManager;
+
+    /**
+     * Evict Hibernate's first-level cache so the next repository read fetches from
+     * the database rather than returning a cached mutated copy. Use this between a
+     * MockMvc dispatch and a re-read assertion when verifying that a write actually
+     * landed (per the java-reviewer's L1-cache false-pass finding on stop_returnsOk).
+     */
+    protected void clearPersistenceContext() {
+        entityManager.flush();
+        entityManager.clear();
+    }
 
     /**
      * Seed a Patient with the same shape the device/app currently sends. The patientId is
