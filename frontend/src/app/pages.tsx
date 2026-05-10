@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 
 import { PatientDetail } from '../features/patients/PatientDetail'
 import { PatientList } from '../features/patients/PatientList'
@@ -64,7 +64,10 @@ export function SettingsPage() {
 
 export function NotFoundPage() {
   const { t } = useT()
-  const path = window.location.pathname
+  // useLocation() reads the in-context path so MemoryRouter-driven tests
+  // (and any future SSR snapshot) reflect the actual route under test
+  // instead of the hosting frame's window.location.pathname.
+  const { pathname } = useLocation()
   return (
     <div role="alert" style={{ textAlign: 'center', padding: 'var(--space-7) var(--space-5)' }}>
       <h1>{t('notFound.title')}</h1>
@@ -72,7 +75,7 @@ export function NotFoundPage() {
         {t('notFound.description')}
       </p>
       <p style={{ marginBottom: 'var(--space-5)', color: 'var(--color-fg-subtle)' }}>
-        <code>{path}</code>
+        <code>{pathname}</code>
       </p>
       <Link to="/">
         <Button variant="primary">{t('notFound.home')}</Button>

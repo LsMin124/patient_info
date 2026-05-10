@@ -5,13 +5,23 @@ import { z } from 'zod'
  * numeric `id` PK). The wire keys MUST match exactly — see WEB_REBUILD_PLAN.md
  * §3 (Frozen Contract).
  */
+/**
+ * Allowed values for the `sex` wire key. Aligned with `CreatePatientSchema`
+ * so round-trips (form input → POST → list refresh → render) stay type-safe.
+ * The frozen contract has only ever returned these three strings; an
+ * unexpected backend value surfaces as a 422 ApiError via the strict parse
+ * rather than silently rendering an unknown label.
+ */
+export const SEX_VALUES = ['male', 'female', 'other'] as const
+export type Sex = (typeof SEX_VALUES)[number]
+
 export const PatientSchema = z
   .object({
     id: z.number().int(),
     patientId: z.string().min(1),
     name: z.string().min(1),
     age: z.number().int().min(0),
-    sex: z.string().min(1),
+    sex: z.enum(SEX_VALUES),
     height: z.number(),
     weight: z.number(),
   })

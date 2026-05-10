@@ -45,13 +45,24 @@ export function PatientDetail() {
     )
   }
 
-  const patient = (query.data ?? []).find((p) => p.patientId === patientId)
+  // Clamp the URL segment to the patientId shape (1–32 chars of
+  // [A-Za-z0-9_-]) before reflecting it in the UI so a crafted link
+  // cannot stuff arbitrary glyphs or overlong strings into EmptyState.
+  const safePatientId = patientId && /^[A-Za-z0-9_-]{1,32}$/.test(patientId) ? patientId : null
+  const patient = safePatientId
+    ? (query.data ?? []).find((p) => p.patientId === safePatientId)
+    : undefined
+
   if (!patient) {
     return (
       <section className="patient-detail">
         <EmptyState
           title="환자를 찾을 수 없습니다"
-          description={`'${patientId ?? ''}' 에 해당하는 환자가 없습니다.`}
+          description={
+            safePatientId
+              ? `'${safePatientId}' 에 해당하는 환자가 없습니다.`
+              : '잘못된 환자 ID 형식입니다.'
+          }
           action={
             <Link to="/patients">
               <Button variant="secondary">{t('patient.list.title')}</Button>

@@ -56,6 +56,7 @@ export function PatientRegisterForm({ onDone }: PatientRegisterFormProps) {
   const mutation = useCreatePatientMutation()
   const [state, setState] = useState<FormState>(initialState)
   const [errors, setErrors] = useState<FieldErrors>({})
+  const [generalErrors, setGeneralErrors] = useState<string[]>([])
 
   function update<K extends keyof FormState>(key: K) {
     return (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -78,10 +79,13 @@ export function PatientRegisterForm({ onDone }: PatientRegisterFormProps) {
 
     const parsed = CreatePatientSchema.safeParse(candidate)
     if (!parsed.success) {
-      setErrors(zodIssuesToFieldErrors(parsed.error))
+      const { fieldErrors, generalErrors: ge } = zodIssuesToFieldErrors(parsed.error)
+      setErrors(fieldErrors)
+      setGeneralErrors(ge)
       return
     }
     setErrors({})
+    setGeneralErrors([])
 
     mutation.mutate(parsed.data, {
       onSuccess: () => {
@@ -98,6 +102,13 @@ export function PatientRegisterForm({ onDone }: PatientRegisterFormProps) {
 
   return (
     <form className="patient-register-form" onSubmit={handleSubmit} noValidate>
+      {generalErrors.length > 0 && (
+        <div role="alert" className="patient-register-form__banner">
+          {generalErrors.map((msg, i) => (
+            <p key={i}>{msg}</p>
+          ))}
+        </div>
+      )}
       <Input
         label={t('patient.register.patientId')}
         value={state.patientId}
@@ -112,7 +123,11 @@ export function PatientRegisterForm({ onDone }: PatientRegisterFormProps) {
         label={t('patient.register.name')}
         value={state.name}
         onChange={update('name')}
-        autoComplete="name"
+        // 'off' (not 'name') so the browser does not suggest the operator's
+        // own name or remember previously-entered patient names across
+        // sessions on shared clinical workstations — both can silently
+        // mis-enter someone else's medical data.
+        autoComplete="off"
         required
         {...(errors.name ? { error: errors.name } : {})}
       />
@@ -121,6 +136,7 @@ export function PatientRegisterForm({ onDone }: PatientRegisterFormProps) {
           label={t('patient.register.age')}
           type="number"
           inputMode="numeric"
+          autoComplete="off"
           min={0}
           max={150}
           value={state.age}
@@ -144,6 +160,7 @@ export function PatientRegisterForm({ onDone }: PatientRegisterFormProps) {
           label={t('patient.register.height')}
           type="number"
           inputMode="decimal"
+          autoComplete="off"
           step={0.1}
           value={state.height}
           onChange={update('height')}
@@ -154,6 +171,7 @@ export function PatientRegisterForm({ onDone }: PatientRegisterFormProps) {
           label={t('patient.register.weight')}
           type="number"
           inputMode="decimal"
+          autoComplete="off"
           step={0.1}
           value={state.weight}
           onChange={update('weight')}
@@ -173,13 +191,25 @@ export function PatientRegisterForm({ onDone }: PatientRegisterFormProps) {
   )
 }
 
-function zodIssuesToFieldErrors(error: ZodError): FieldErrors {
-  const out: FieldErrors = {}
+interface ParsedZodIssues {
+  fieldErrors: FieldErrors
+  /** Errors with no recognized field path (cross-field refines etc.). */
+  generalErrors: string[]
+}
+
+function zodIssuesToFieldErrors(error: ZodError): ParsedZodIssues {
+  const fieldErrors: FieldErrors = {}
+  const generalErrors: string[] = []
   for (const issue of error.issues) {
     const key = issue.path[0]
     if (typeof key === 'string' && key in initialState) {
-      out[key as keyof CreatePatientInput] = issue.message
+      fieldErrors[key as keyof CreatePatientInput] = issue.message
+    } else {
+      // Empty path / cross-field refine / unknown path — surface as a
+      // general banner instead of silently dropping the validation
+      // failure on the floor.
+      generalErrors.push(issue.message)
     }
   }
-  return out
+  return { fieldErrors, generalErrors }
 }
