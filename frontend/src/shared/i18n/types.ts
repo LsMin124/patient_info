@@ -20,6 +20,7 @@ export interface Translations {
     retry: string
     loading: string
     error: string
+    notifications: string
   }
   patient: {
     list: {

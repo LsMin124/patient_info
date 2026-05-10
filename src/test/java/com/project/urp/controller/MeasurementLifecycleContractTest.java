@@ -26,7 +26,7 @@ class MeasurementLifecycleContractTest extends ApiContractTestBase {
     @Test
     @DisplayName("POST /measurements/start returns measurement_Id (uppercase I) as a number")
     void start_returns_measurement_Id_uppercaseI() throws Exception {
-        seedPatient("p001", "이승민");
+        seedPatient("p001", "테스트환자A");
 
         Map<String, String> body = Map.of("patientId", "p001", "memo", "L knee");
 
@@ -42,7 +42,7 @@ class MeasurementLifecycleContractTest extends ApiContractTestBase {
     @Test
     @DisplayName("POST /measurements/{id}/data accepts snake_case payload")
     void saveData_acceptsSnakeCasePayload() throws Exception {
-        Patient p = seedPatient("p001", "이승민");
+        Patient p = seedPatient("p001", "테스트환자A");
         Measurement m = seedMeasurement(p, "smoke");
 
         List<Map<String, Object>> payload = List.of(
@@ -62,7 +62,7 @@ class MeasurementLifecycleContractTest extends ApiContractTestBase {
     @Test
     @DisplayName("POST /measurements/{id}/data accepts large integer time_offset_ms")
     void saveData_acceptsLargeIntegerTimeOffset() throws Exception {
-        Patient p = seedPatient("p001", "이승민");
+        Patient p = seedPatient("p001", "테스트환자A");
         Measurement m = seedMeasurement(p, "long-session");
 
         // 2_000_000_000 fits in int (max int = 2_147_483_647). The current cast
@@ -80,13 +80,18 @@ class MeasurementLifecycleContractTest extends ApiContractTestBase {
     @Test
     @DisplayName("POST /measurements/{id}/stop returns 200 and sets endTime")
     void stop_returnsOk_andSetsEndTime() throws Exception {
-        Patient p = seedPatient("p001", "이승민");
+        Patient p = seedPatient("p001", "테스트환자A");
         Measurement m = seedMeasurement(p, "to-stop");
 
         assertThat(m.getEndTime()).isNull();
 
         mockMvc.perform(post("/api/v1/measurements/" + m.getId() + "/stop"))
                 .andExpect(status().isOk());
+
+        // Evict the L1 cache so the re-read goes to the database, not the
+        // session copy the service mutated. Without this, the assertion would
+        // pass even if the service forgot to call repository.save().
+        clearPersistenceContext();
 
         Measurement reloaded = measurementRepository.findById(m.getId()).orElseThrow();
         assertThat(reloaded.getEndTime()).isNotNull();
@@ -95,7 +100,7 @@ class MeasurementLifecycleContractTest extends ApiContractTestBase {
     @Test
     @DisplayName("Full lifecycle: start → data → stop preserves wire shapes")
     void fullLifecycle_preservesWireShapes() throws Exception {
-        seedPatient("p001", "이승민");
+        seedPatient("p001", "테스트환자A");
 
         MvcResult startResult = mockMvc.perform(post("/api/v1/measurements/start")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -119,6 +124,8 @@ class MeasurementLifecycleContractTest extends ApiContractTestBase {
 
         mockMvc.perform(post("/api/v1/measurements/" + measurementId + "/stop"))
                 .andExpect(status().isOk());
+
+        clearPersistenceContext();
 
         Measurement m = measurementRepository.findById(measurementId).orElseThrow();
         assertThat(m.getEndTime()).isNotNull();

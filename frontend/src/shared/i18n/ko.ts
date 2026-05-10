@@ -18,6 +18,7 @@ export const ko: Translations = {
     retry: '다시 시도',
     loading: '로딩 중...',
     error: '오류',
+    notifications: '알림',
   },
   patient: {
     list: {

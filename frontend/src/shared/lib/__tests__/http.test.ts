@@ -52,20 +52,40 @@ describe('httpGet', () => {
   })
 
   it('throws ApiError carrying server status on non-2xx', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ error: 'not found' }, 404))
-    await expect(httpGet('/api/v1/missing', okSchema)).rejects.toMatchObject({
-      name: 'ApiError',
-      status: 404,
-      message: 'not found',
-    })
+    // Server attempts to leak a patient identifier in the error body; ApiError
+    // must use a generic message and quarantine the detail on `cause` only.
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: 'Invalid patient Id: p001' }, 404))
+    const err = await httpGet('/api/v1/missing', okSchema).catch((e) => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err.status).toBe(404)
+    expect(err.message).toBe('요청한 리소스를 찾을 수 없습니다.')
+    expect(err.message).not.toContain('p001')
+    expect(err.cause).toEqual({ error: 'Invalid patient Id: p001' })
   })
 
-  it('uses status-only message when error body is unparseable', async () => {
+  it('uses status-keyed generic message when error body is unparseable', async () => {
     fetchMock.mockResolvedValueOnce(new Response('<html>500</html>', { status: 500 }))
-    await expect(httpGet('/api/v1/oops', okSchema)).rejects.toMatchObject({
-      status: 500,
-      message: expect.stringContaining('500'),
-    })
+    const err = await httpGet('/api/v1/oops', okSchema).catch((e) => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err.status).toBe(500)
+    expect(err.message).toBe('서버에 일시적인 문제가 발생했습니다.')
+    expect(err.cause).toBeUndefined()
+  })
+
+  it('maps 4xx statuses to status-specific generic messages', async () => {
+    const cases: Array<[number, string]> = [
+      [400, '잘못된 요청입니다.'],
+      [401, '인증이 필요합니다.'],
+      [403, '접근 권한이 없습니다.'],
+      [409, '이미 존재하는 데이터입니다.'],
+      [422, '입력값을 확인해 주세요.'],
+    ]
+    for (const [status, expected] of cases) {
+      fetchMock.mockResolvedValueOnce(jsonResponse({ error: 'leaky-detail' }, status))
+      const err = await httpGet('/api/v1/x', okSchema).catch((e) => e)
+      expect(err.status).toBe(status)
+      expect(err.message).toBe(expected)
+    }
   })
 
   it('wraps network failures into ApiError(status=0)', async () => {

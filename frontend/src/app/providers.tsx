@@ -1,7 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
 
-import { useTheme } from '../shared/hooks/useTheme'
+import { ThemeProvider } from '../shared/hooks/ThemeProvider'
+import { useT } from '../shared/hooks/useT'
+import { LocaleProvider } from '../shared/i18n/LocaleProvider'
 import { ToastProvider } from '../shared/ui/Toast'
 
 import { ErrorBoundary } from './ErrorBoundary'
@@ -11,11 +13,18 @@ interface ProvidersProps {
 }
 
 /**
- * Wraps the app in the four global providers in stable order:
+ * Global provider stack (outer → inner):
  *   ErrorBoundary  — outermost so any provider failure is caught
  *   QueryClient    — server cache; lives for the app's lifetime
- *   ThemeBridge    — applies <html data-theme=...>
+ *   ThemeProvider  — single theme state (applies <html data-theme=...>)
+ *   LocaleProvider — single locale state (re-renders all useT consumers)
  *   ToastProvider  — innermost so any child component can dispatch toasts
+ *
+ * ThemeProvider and LocaleProvider replace the earlier ThemeBridge / per-hook
+ * state pattern. Lifting state into Context fixes the cross-component sync
+ * bug surfaced in the post-Phase-2 review (changing locale or theme in one
+ * component now propagates to every consumer in the same tab, not just the
+ * caller).
  */
 export function Providers({ children }: ProvidersProps) {
   const [queryClient] = useState(
@@ -37,17 +46,22 @@ export function Providers({ children }: ProvidersProps) {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <ThemeBridge>
-          <ToastProvider>{children}</ToastProvider>
-        </ThemeBridge>
+        <ThemeProvider>
+          <LocaleProvider>
+            <LocalizedToastProvider>{children}</LocalizedToastProvider>
+          </LocaleProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   )
 }
 
-function ThemeBridge({ children }: { children: ReactNode }) {
-  // Mounting useTheme here applies <html data-theme>; consumers can also call
-  // useTheme() directly to read/toggle.
-  useTheme()
-  return <>{children}</>
+/**
+ * Inner wrapper so the live-region aria-label is locale-aware. Lives inside
+ * LocaleProvider so useT() resolves; ToastProvider stays standalone-friendly
+ * for unit tests via its default regionLabel.
+ */
+function LocalizedToastProvider({ children }: { children: ReactNode }) {
+  const { t } = useT()
+  return <ToastProvider regionLabel={t('common.notifications')}>{children}</ToastProvider>
 }

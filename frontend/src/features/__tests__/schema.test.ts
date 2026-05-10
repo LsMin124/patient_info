@@ -14,7 +14,7 @@ describe('PatientSchema', () => {
   const valid = {
     id: 1,
     patientId: 'p001',
-    name: '이승민',
+    name: '테스트환자A',
     age: 25,
     sex: 'male',
     height: 175.0,

@@ -18,6 +18,7 @@ export const en: Translations = {
     retry: 'Retry',
     loading: 'Loading...',
     error: 'Error',
+    notifications: 'Notifications',
   },
   patient: {
     list: {

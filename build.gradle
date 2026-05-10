@@ -64,7 +64,9 @@ tasks.register('frontendInstall', Exec) {
     commandLine(*pnpmCommand, 'install', '--frozen-lockfile')
     inputs.file(file('frontend/package.json'))
     inputs.file(file('frontend/pnpm-lock.yaml'))
-    outputs.dir(file('frontend/node_modules'))
+    // Sentinel file instead of the entire node_modules tree — walking
+    // node_modules for input snapshotting is slow and noisy.
+    outputs.file(file('frontend/node_modules/.modules.yaml'))
 }
 
 tasks.register('frontendBuild', Exec) {
@@ -90,4 +92,9 @@ tasks.register('frontendSync', Sync) {
     into(file('src/main/resources/static'))
 }
 
-processResources.dependsOn 'frontendSync'
+// Gate the heavy frontend rebuild behind a Gradle property so backend-only
+// iteration (e.g. `./gradlew test -PskipFrontend`) is fast. CI builds and
+// `bootJar` MUST NOT pass the property — they need the static bundle.
+if (!project.hasProperty('skipFrontend')) {
+    processResources.dependsOn 'frontendSync'
+}
