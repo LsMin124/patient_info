@@ -1,0 +1,228 @@
+/* Shared UI primitives stylesheet — every value comes from tokens.css. */
+
+/* ---------- Button ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  border: 1px solid transparent;
+  transition:
+    background var(--duration-fast) var(--ease-out-expo),
+    color var(--duration-fast) var(--ease-out-expo),
+    border-color var(--duration-fast) var(--ease-out-expo);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.btn--primary {
+  background: var(--color-accent);
+  color: var(--color-accent-fg);
+}
+.btn--primary:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+}
+.btn--secondary {
+  background: var(--color-surface);
+  color: var(--color-fg);
+  border-color: var(--color-border);
+}
+.btn--secondary:hover:not(:disabled) {
+  background: var(--color-surface-raised);
+}
+.btn--ghost {
+  background: transparent;
+  color: var(--color-fg);
+}
+.btn--ghost:hover:not(:disabled) {
+  background: var(--color-surface-raised);
+}
+.btn--danger {
+  background: var(--color-danger);
+  color: var(--color-accent-fg);
+}
+
+/* ---------- Input / Select ---------- */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.field__label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-fg);
+}
+.field__hint {
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+}
+.field__error {
+  font-size: var(--text-xs);
+  color: var(--color-danger);
+}
+.input,
+.select {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-fg);
+  font-size: var(--text-sm);
+  transition: border-color var(--duration-fast) var(--ease-out-expo);
+}
+.input:hover,
+.select:hover {
+  border-color: var(--color-border-strong);
+}
+.input[aria-invalid='true'],
+.select[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+
+/* ---------- Modal ---------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: oklch(0% 0 0 / 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: var(--space-4);
+}
+.modal {
+  background: var(--color-surface);
+  color: var(--color-fg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 32rem;
+  max-height: 90vh;
+  overflow: auto;
+  padding: var(--space-5);
+}
+.modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+}
+.modal__title {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  margin: 0;
+}
+
+/* ---------- Toast ---------- */
+.toast-region {
+  position: fixed;
+  bottom: var(--space-4);
+  right: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  z-index: 1000;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  background: var(--color-surface-raised);
+  color: var(--color-fg);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  box-shadow: var(--shadow-md);
+  min-width: 16rem;
+  max-width: 24rem;
+}
+.toast--success {
+  border-left-color: var(--color-success);
+}
+.toast--danger {
+  border-left-color: var(--color-danger);
+}
+.toast--warning {
+  border-left-color: var(--color-warning);
+}
+
+/* ---------- Loading / Skeleton ---------- */
+@keyframes patientinfo-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+.skeleton {
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-md);
+  animation: patientinfo-skeleton-pulse 1.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+.spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: patientinfo-spinner-rotate 0.8s linear infinite;
+}
+@keyframes patientinfo-spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2.4s;
+  }
+}
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  background: oklch(from var(--color-bg) l c h / 0.6);
+  color: var(--color-fg-muted);
+  z-index: 10;
+}
+
+/* ---------- EmptyState ---------- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-7) var(--space-5);
+  text-align: center;
+  color: var(--color-fg-muted);
+}
+.empty-state__title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--color-fg);
+  margin: 0;
+}
+.empty-state__description {
+  font-size: var(--text-sm);
+  max-width: 28rem;
+  margin: 0;
+}
