@@ -15,7 +15,10 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    // 'hidden' emits .map files to disk for debugging tooling but omits the
+    // sourceMappingURL comment, so the bundle does not advertise them and
+    // crawlers / casual visitors do not auto-fetch them.
+    sourcemap: 'hidden',
     target: 'es2022',
   },
 })

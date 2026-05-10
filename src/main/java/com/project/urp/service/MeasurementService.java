@@ -55,11 +55,19 @@ public class MeasurementService {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid measurement Id: " + measurementId));
 
         List<DataPoint> dataPoints = dataList.stream()
-                .map(data -> new DataPoint(
-                        measurement,
-                        (Integer) data.get("time_offset_ms"),
-                        ((Number) data.get("kg_value")).doubleValue()
-                ))
+                .map(data -> {
+                    // Jackson deserializes JSON integers as Long when the value
+                    // exceeds Integer.MAX_VALUE; the bare (Integer) cast would
+                    // throw ClassCastException for long sessions. Use Number so
+                    // both Integer and Long are accepted without losing intent.
+                    Number timeOffset = (Number) data.get("time_offset_ms");
+                    Number kgValue = (Number) data.get("kg_value");
+                    if (timeOffset == null || kgValue == null) {
+                        throw new IllegalArgumentException(
+                                "Invalid data point payload: time_offset_ms and kg_value are required");
+                    }
+                    return new DataPoint(measurement, timeOffset.intValue(), kgValue.doubleValue());
+                })
                 .collect(Collectors.toList());
 
         dataPointRepository.saveAll(dataPoints); // List를 db에 모두 저장
