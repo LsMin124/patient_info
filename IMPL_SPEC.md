@@ -101,13 +101,20 @@ patient_info/
 
 | 범위 | 명령 |
 |---|---|
-| 프론트 타입체크 | `cd frontend && pnpm tsc --noEmit` |
-| 프론트 린트 | `cd frontend && pnpm eslint .` |
-| 프론트 단위 테스트 | `cd frontend && pnpm vitest run` |
-| 프론트 빌드 | `cd frontend && pnpm build` |
-| 백엔드 빌드+테스트 | `./gradlew build` |
-| 백엔드 테스트만 | `./gradlew test` |
-| E2E (Phase 4 이후) | `cd frontend && pnpm playwright test` |
+| 프론트 타입체크 | `cd frontend && corepack pnpm@9.15.9 tsc` |
+| 프론트 린트 | `cd frontend && corepack pnpm@9.15.9 lint` |
+| 프론트 단위 테스트 | `cd frontend && corepack pnpm@9.15.9 test` |
+| 프론트 커버리지 | `cd frontend && corepack pnpm@9.15.9 test:coverage` |
+| 프론트 포맷 | `cd frontend && corepack pnpm@9.15.9 format:check` |
+| 프론트 빌드 | `cd frontend && corepack pnpm@9.15.9 build` |
+| 백엔드 빌드+테스트 | `JAVA_HOME=$HOME/.local/jdks/jdk-17.0.13+11 PATH=$JAVA_HOME/bin:$PATH ./gradlew build` |
+| 백엔드 테스트만 | 동일 prefix + `./gradlew test` |
+| 백엔드 빠른 테스트(프론트 빌드 생략) | 동일 prefix + `./gradlew test -PskipFrontend` |
+| E2E (Phase 4 이후) | `cd frontend && corepack pnpm@9.15.9 e2e` |
+
+**환경 주의:**
+- 시스템 JDK가 17 미만이면 Gradle 실행 전에 `JAVA_HOME`을 사용자 로컬 Temurin 17 (`~/.local/jdks/jdk-17.0.13+11`)로 지정한다. CI/운영 환경에는 JDK 17+ 이 별도로 설치되어 있어야 한다 (T34 README/RUNBOOK에 명시).
+- 시스템에 글로벌 pnpm이 없는 경우 `corepack pnpm@9.15.9`를 직접 호출. `frontend/package.json`의 `packageManager: "pnpm@9.15.9"` 핀이 동일 버전을 강제한다.
 
 ### 1.7 금지 구역 (변경 시 PR 차단)
 
@@ -221,11 +228,11 @@ Phase 8 (운영화 + 컷오버)    ← 모든 Phase 완료
 - §1.3 코딩 규약
 - §1.6 검증 명령어
 
-**산출물:**
-- `frontend/.eslintrc.cjs` — `@typescript-eslint`, `react`, `react-hooks`, `import` 룰셋. `no-console: warn` (테스트 파일 제외).
-- `frontend/.prettierrc` — singleQuote, semi 자유, printWidth 100.
-- `frontend/vitest.config.ts` — jsdom, setup 파일.
-- `frontend/src/test/setup.ts` — `@testing-library/jest-dom` import.
+**산출물(실제 출하본):**
+- `frontend/eslint.config.mjs` — ESLint 9 flat config (예전 `.eslintrc.cjs` 대신). `@typescript-eslint`, `react`, `react-hooks`, `import` 룰셋. `no-console: warn` (테스트 파일 제외). Node-side configs(`vite.config.ts` 등)는 별도 globals 블록.
+- `frontend/.prettierrc.json` + `frontend/.prettierignore` — singleQuote, semi 자유, printWidth 100.
+- `frontend/vitest.config.ts` — jsdom, setup 파일, **§7.4 커버리지 임계치 적용**.
+- `frontend/src/test/setup.ts` — `@testing-library/jest-dom` import + `cleanup()` 자동 호출.
 - `frontend/playwright.config.ts` — baseURL `http://localhost:5173`, webServer auto-start `pnpm dev`.
 - `frontend/e2e/smoke.spec.ts` — 페이지 로드 + h1 보임 검증 placeholder.
 - `frontend/src/App.test.tsx` — Vitest placeholder.
@@ -1351,3 +1358,68 @@ T15 산출물에 다음 추가:
 | 패키지 메이저 점프 | 빌드/런타임 회귀 | 중간 | §7.2 버전 핀 정책 |
 | 1만 포인트 이상 차트 성능 | INP 미달 | 중간 | §7.8 LTTB 다운샘플 |
 | 진행 중 세션 차트의 stale 데이터 | UX 혼동 | 낮음 | §7.7 명시적 라벨, 자동 폴링 없음 |
+
+---
+
+## 8. Plan Review v2 (post-Phase-2, 2026-05-10)
+
+Phase 0–2 종료 후 typescript-reviewer / java-reviewer / security-reviewer 병렬 감사에서 발견·반영된 사항. 매 페이즈 종료 시 동일 리뷰 사이클 반복(`docs/PHASE_REVIEW.md`).
+
+### 8.1 출하본 vs 명세 차이 (drift sync)
+
+| 명세 위치 | 명세 | 실제 출하본 | 처리 |
+|---|---|---|---|
+| T02 산출물 | `.eslintrc.cjs` | `eslint.config.mjs` (ESLint 9 flat config) | §3 T02 본문 수정됨 |
+| T11 산출물 | Translations 타입 inline | 별도 `shared/i18n/types.ts` interface | 의도적; KeyPath 추론 정확도 ↑ |
+| T03 효과 | "이 태스크에서는 legacy static 삭제하지 않음" | 첫 빌드에서 Gradle `Sync`가 자동 정리, T36은 검증·커밋만 | §7.14 / T36과 일관성 유지 |
+| T13 셸 | `ThemeBridge` 사이드이펙트 훅 | `ThemeProvider` Context (post-review v2 리팩토링) | 리뷰 결과 정식 산출물 변경 |
+| T16 셸 | `useT()` 단독 훅 | `LocaleProvider` Context + `useT` 소비자 | 리뷰 결과 정식 산출물 변경 |
+| `app/` 트리 | `providers.tsx`, `routes.tsx` | + `pages.tsx`, `ErrorBoundary.tsx`, `__tests__/` | 의도적 추가 |
+
+### 8.2 사전 적용된 Phase 7 항목 (보안 critical/high)
+
+다음은 원래 Phase 7(T30/T33)의 작업이었으나 리뷰에서 보안 risk로 식별되어 본 review 브랜치에서 사전 적용됨:
+
+- **T33 부분**: `MeasurementService.saveDataPoints`의 `(Integer)` 캐스트 → `((Number) ...).intValue()` + null 가드 (Long 진입 시 ClassCastException 회피).
+- **T30 부분**:
+  - DB 자격증명 → `${DB_USERNAME}` / `${DB_PASSWORD}` 환경변수로 외부화 (legacy 값은 dev fallback으로만 유지).
+  - `spring.jpa.show-sql=false` (PII 로그 차단).
+  - `spring.jackson.serialization.write-dates-as-timestamps=false` 명시 (Boot 기본 의존 제거).
+  - `server.error.{include-message,include-stacktrace,include-binding-errors,include-exception}` 모두 봉쇄.
+  - 8행 typo `spring,datasource…` → `spring.datasource…` 수정.
+
+T30 잔여(완전 yml 변환·프로파일 분리·Flyway/마이그레이션·CORS 빈)은 Phase 7에서 그대로 진행. T33 잔여는 본 리뷰에서 모두 처리되어 사실상 완료.
+
+### 8.3 신규 보안 안전장치
+
+- **HTTP 에러 메시지 sanitization** (`shared/lib/http.ts`): 서버가 보낸 임의 메시지를 ApiError.message에 직접 노출하지 않음. 상태 코드 기반 일반화된 한국어 메시지로 매핑하고 원본은 `cause`에만 보존.
+- **Production source map**: `vite.config.ts`의 `sourcemap: 'hidden'` — `.map` 파일은 디스크에만 생성, 번들에 `sourceMappingURL` 주석 미포함.
+
+### 8.4 신규 견고성 보강
+
+- **LocaleProvider / ThemeProvider Context**: 동일 탭 컴포넌트 간 상태 동기화 보장. cross-tab 동기화도 `storage` 이벤트로 유지.
+- **테스트 격리 강화**: `ApiContractTestBase.clearPersistenceContext()` (Hibernate L1 캐시 evict). 컨트랙트 테스트가 service mutation을 캐시 false-pass로 통과하지 않도록.
+- **컨트랙트 테스트 값 단언**: 키 존재(`.exists()`)에서 값 단언(`.value(...)` / `.isNumber()`)으로 강화. 키 rename 회귀를 잡도록.
+- **빠른 백엔드 iteration**: `./gradlew test -PskipFrontend` 옵션 (Vite 빌드 생략).
+- **Toast aria-label i18n**: `regionLabel` prop으로 외부화, `Providers`가 `t('common.notifications')` 주입.
+
+### 8.5 기존 위험 관리 표 갱신 (§7.14 보완)
+
+- "운영 자격증명 노출" → **(post-review v2 부분 완화)**: `${DB_USERNAME}` / `${DB_PASSWORD}` 적용. 단 git 히스토리에 `smartbiomed/smartbiomed`가 평문 잔존하므로 운영 환경은 **즉시 회전** 필요. T34 RUNBOOK에서 수동 단계로 명시.
+- "백엔드 내부 메시지 UI 노출" → **신규(완화됨)**: §8.3 HTTP sanitization.
+- "운영 source map 공개" → **신규(완화됨)**: §8.3 hidden sourcemap.
+- "useT/useTheme cross-component desync" → **신규(완화됨)**: §8.4 Provider Context.
+- "Hibernate L1 캐시 false-pass" → **신규(완화됨)**: §8.4 clearPersistenceContext.
+
+### 8.6 리뷰 사이클 정식화
+
+매 phase 머지 직후 다음 사이클 실행:
+
+1. `review/post-phase-N` 브랜치 분기 (main에서)
+2. typescript-reviewer / java-reviewer / security-reviewer 병렬 호출
+3. CRITICAL/HIGH 발견 사항 즉시 수정, MEDIUM은 가능한 범위에서, LOW는 최소 명시
+4. IMPL_SPEC drift sync (실제 출하본과 명세 일치)
+5. 모든 게이트 그린 검증 (§1.6)
+6. main 머지 → 다음 phase 분기
+
+체크리스트: `docs/PHASE_REVIEW.md` (단독 문서). 본 절은 결과 추적용.

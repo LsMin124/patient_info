@@ -1,0 +1,110 @@
+# Phase Review Checklist
+
+> 매 phase 브랜치 머지 직후 새 review 브랜치에서 실행. 첫 적용: post-Phase-2 (2026-05-10).
+> 상위 명세: `IMPL_SPEC.md §8.6`. 결과 trail은 `IMPL_SPEC.md §8.x` 또는 신규 `§N` 추가.
+
+---
+
+## 0. 트리거
+
+- 직전 phase 브랜치가 main에 머지된 직후
+- 다음 phase 브랜치 분기 **전**
+
+## 1. 브랜치 생성
+
+```bash
+git checkout main
+git pull --ff-only origin main   # 원격 동기화 후
+git checkout -b review/post-phase-N
+```
+
+## 2. 다중 시각 리뷰 (병렬)
+
+**reviewer 3개 동시 호출** — 한 메시지에 모두 launch.
+
+| reviewer | 범위 |
+|---|---|
+| `typescript-reviewer` | `frontend/` TS/React 변경분, 테스트 커버리지 갭, 타입 안전성, 상태/race |
+| `java-reviewer` | `src/` 백엔드 변경분, 테스트 격리, h2/MariaDB 호환성, build.gradle |
+| `security-reviewer` | 양쪽 cross-cutting — 자격증명/PII/error leak/소스맵/dep 위생 |
+
+각 reviewer 프롬프트 템플릿: `IMPL_SPEC.md §5` 위임 프롬프트 + phase별 산출물 목록 + 직전 머지 SHA range (`git diff main~1..main --stat`).
+
+## 3. 발견 사항 분류 / 처리
+
+| Severity | 처리 |
+|---|---|
+| CRITICAL | 본 리뷰 브랜치에서 즉시 수정. main 머지 차단 사유. |
+| HIGH | 본 리뷰 브랜치에서 수정. 다음 phase 시작 전 머지. |
+| MEDIUM | 본 리뷰에서 가능한 범위에서. 다음 phase에 반영해도 됨 (단 IMPL_SPEC에 명시). |
+| LOW / 문서 | 최소 IMPL_SPEC §8.x에 기록. 코드 fix는 선택. |
+
+**Phase 7 보안 작업 사전 적용 정책:** 보안 CRITICAL/HIGH는 origin phase가 7이라도 즉시 적용. T30/T33이 부분 완료된 경우 §8.2에 기록.
+
+## 4. 문서 동기화
+
+본 리뷰에서 반드시 수행:
+
+- [ ] `IMPL_SPEC.md` drift 점검 (산출물·디렉토리 트리·검증 명령) — 다른 점은 §8 (또는 §N) 표로 기록
+- [ ] 새 보안 안전장치는 §8.3 / §7.14 위험 관리 표에 추가
+- [ ] 새 견고성 보강은 §8.4에 추가
+- [ ] 본 리뷰가 사전 적용한 future-phase 작업은 §8.2에 기록
+- [ ] `WEB_REBUILD_PLAN.md`는 결정/계약 문서이므로 통상 수정 없음. 단 동결 계약 변경 시(거의 없음) §3 보강.
+
+## 5. 수정 commit 분할
+
+표준 commit 순서(권장):
+
+1. `fix(security): …` — credentials / sanitization / sourcemap 등 critical
+2. `fix(<area>): …` — 핵심 버그 (HIGH 발견)
+3. `test(<area>): …` — 테스트 갭/격리 강화
+4. `chore: …` — 픽스처 sanitization / lint config 등
+5. `docs: …` — IMPL_SPEC drift sync + (필요 시) 새 §N 추가 + 본 PHASE_REVIEW 갱신
+
+## 6. 검증 게이트 (모두 그린이어야 머지)
+
+`IMPL_SPEC.md §1.6` 표 전체 + 다음:
+
+- [ ] `corepack pnpm@9.15.9 tsc` — 0 errors
+- [ ] `corepack pnpm@9.15.9 lint` — 0 errors / 0 warnings
+- [ ] `corepack pnpm@9.15.9 format:check` — clean
+- [ ] `corepack pnpm@9.15.9 test` — 모든 테스트 통과
+- [ ] `corepack pnpm@9.15.9 test:coverage` — §7.4 임계치 만족 (lines 80, branches 75)
+- [ ] `corepack pnpm@9.15.9 build` — 번들 사이즈 budget 내 (현재 250kB 대 — Phase 4 이후 차트 추가 시 재평가)
+- [ ] `corepack pnpm@9.15.9 e2e` — Phase 4 이후 적용
+- [ ] `JAVA_HOME=… ./gradlew build` — 백엔드 + 프론트 통합 빌드
+- [ ] `JAVA_HOME=… ./gradlew test` — 모든 컨트랙트 테스트 그린
+- [ ] `git status` — 의도한 파일만 변경됨
+
+## 7. main 머지
+
+```bash
+git checkout main
+git merge --no-ff review/post-phase-N -m "$(cat <<'EOF'
+Merge branch 'review/post-phase-N'
+
+Post-Phase-N review cycle (typescript + java + security)
+- Critical/High fixes
+- Test isolation/coverage hardening
+- IMPL_SPEC drift sync (§8.N)
+EOF
+)"
+```
+
+## 8. 다음 phase 분기
+
+```bash
+git checkout -b phase/(N+1)-<topic>
+```
+
+본 PHASE_REVIEW 체크리스트는 다음 phase 종료 시 다시 호출됨.
+
+---
+
+## 8.1 결과 추적
+
+| 회차 | 시작 | 머지 SHA | reviewer 호출 | 적용된 fix 카테고리 | IMPL_SPEC 절 |
+|---|---|---|---|---|---|
+| post-Phase-2 | 2026-05-10 | (이번 머지 시 채움) | typescript / java / security | 자격증명 외부화, Number 캐스트, sourcemap hidden, Locale/Theme Context, http sanitization, EM clear, 값 단언, Modal/Toast 테스트, fixture 가명화 | `IMPL_SPEC.md §8` |
+
+> 매 phase 종료 시 위 표에 1행 추가.
