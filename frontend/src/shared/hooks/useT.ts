@@ -1,47 +1,16 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback } from 'react'
 
-import { DEFAULT_LOCALE, t, type KeyPath, type Locale } from '../i18n'
+import { t, type KeyPath } from '../i18n'
+import { useLocaleContext } from '../i18n/LocaleProvider'
 
-const STORAGE_KEY = 'patientinfo:locale'
-const VALID_LOCALES: ReadonlyArray<Locale> = ['ko', 'en']
-
-function readStoredLocale(): Locale {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (raw && (VALID_LOCALES as ReadonlyArray<string>).includes(raw)) {
-      return raw as Locale
-    }
-  } catch {
-    // ignore
-  }
-  return DEFAULT_LOCALE
-}
-
+/**
+ * App-wide translation hook. Returns the current locale, a setter, and a
+ * `t(key)` function bound to the locale. State is shared via LocaleContext
+ * so a setLocale call in one component re-renders every consumer in the
+ * same tab.
+ */
 export function useT() {
-  const [locale, setLocaleState] = useState<Locale>(readStoredLocale)
-
-  const setLocale = useCallback((next: Locale) => {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, next)
-    } catch {
-      // ignore
-    }
-    setLocaleState(next)
-  }, [])
-
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key !== STORAGE_KEY) return
-      const v = e.newValue
-      if (v && (VALID_LOCALES as ReadonlyArray<string>).includes(v)) {
-        setLocaleState(v as Locale)
-      }
-    }
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
-  }, [])
-
+  const { locale, setLocale } = useLocaleContext()
   const translate = useCallback((key: KeyPath) => t(locale, key), [locale])
-
   return { locale, setLocale, t: translate }
 }
