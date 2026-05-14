@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw'
 
+import type { DataPoint, MeasurementSummary } from '../features/measurements/schema'
 import type { Patient } from '../features/patients/schema'
 
 /**
@@ -49,9 +50,43 @@ export const handlers = [
     return HttpResponse.json(created, { status: 201 })
   }),
 
-  http.get('/api/v1/patients/:patientId/measurements', () => HttpResponse.json([])),
+  http.get('/api/v1/patients/:patientId/measurements', () => HttpResponse.json(seedSessions)),
 
-  http.get('/api/v1/measurements/:id/data', () => HttpResponse.json([])),
+  http.get('/api/v1/measurements/:id/data', () => HttpResponse.json(seedDataPoints)),
+]
+
+/**
+ * Two seeded sessions for the default patient: one completed, one still
+ * in progress (endTime null) — mirrors the device lifecycle so tests can
+ * exercise both the "측정 진행 중" label and the normal path.
+ */
+const seedSessions: MeasurementSummary[] = [
+  {
+    measurementId: 101,
+    startTime: '2026-05-01T10:30:00',
+    endTime: '2026-05-01T10:30:05',
+    memo: 'L knee',
+  },
+  {
+    measurementId: 102,
+    startTime: '2026-05-02T14:15:00',
+    endTime: null,
+    memo: null,
+  },
+]
+
+/**
+ * A short synthetic force curve (kg-force) — rises to a peak then settles.
+ * timeOffsetMs is strictly ascending (the server sorts; the UI relies on it).
+ */
+const seedDataPoints: DataPoint[] = [
+  { timeOffsetMs: 0, kgValue: 0 },
+  { timeOffsetMs: 50, kgValue: 1.5 },
+  { timeOffsetMs: 100, kgValue: 4.2 },
+  { timeOffsetMs: 150, kgValue: 7.8 },
+  { timeOffsetMs: 200, kgValue: 9.1 },
+  { timeOffsetMs: 250, kgValue: 8.4 },
+  { timeOffsetMs: 300, kgValue: 6.0 },
 ]
 
 /**
@@ -64,4 +99,12 @@ export function listPatientsReturning(patients: Patient[]) {
 
 export function createPatientFailing(status: number, body: Record<string, unknown> = {}) {
   return [http.post('/api/v1/patients', () => HttpResponse.json(body, { status }))]
+}
+
+export function listSessionsReturning(sessions: MeasurementSummary[]) {
+  return [http.get('/api/v1/patients/:patientId/measurements', () => HttpResponse.json(sessions))]
+}
+
+export function getDataPointsReturning(points: DataPoint[]) {
+  return [http.get('/api/v1/measurements/:id/data', () => HttpResponse.json(points))]
 }
