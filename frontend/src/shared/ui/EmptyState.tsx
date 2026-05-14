@@ -2,6 +2,12 @@ import type { ReactNode } from 'react'
 
 export interface EmptyStateProps {
   title: ReactNode
+  /**
+   * Supplementary copy. Pass plain text or trusted React nodes only —
+   * NEVER `dangerouslySetInnerHTML` or unsanitized HTML strings. Anything
+   * sourced from user input or URL params must be validated/escaped at
+   * the call site (see `PatientDetail.tsx` for the patientId regex guard).
+   */
   description?: ReactNode
   icon?: ReactNode
   action?: ReactNode

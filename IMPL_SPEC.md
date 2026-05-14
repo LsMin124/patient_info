@@ -1417,9 +1417,40 @@ T30 잔여(완전 yml 변환·프로파일 분리·Flyway/마이그레이션·CO
 
 1. `review/post-phase-N` 브랜치 분기 (main에서)
 2. typescript-reviewer / java-reviewer / security-reviewer 병렬 호출
+   (해당 phase에 변경이 없는 reviewer는 생략 가능 — §8.7 참고)
 3. CRITICAL/HIGH 발견 사항 즉시 수정, MEDIUM은 가능한 범위에서, LOW는 최소 명시
 4. IMPL_SPEC drift sync (실제 출하본과 명세 일치)
 5. 모든 게이트 그린 검증 (§1.6)
 6. main 머지 → 다음 phase 분기
 
 체크리스트: `docs/PHASE_REVIEW.md` (단독 문서). 본 절은 결과 추적용.
+
+---
+
+## 8.7 Plan Review v3 (post-Phase-3, 2026-05-11)
+
+Phase 3 (T18–T21, 환자 관리) 머지 후 typescript-reviewer + security-reviewer 병렬 감사. **Phase 3는 백엔드 변경 0이라 java-reviewer 생략** — `docs/PHASE_REVIEW.md §3` 정책에 따라 해당 phase에 변경이 없는 reviewer는 건너뛸 수 있다.
+
+### 8.7.1 적용된 fix (HIGH + MEDIUM)
+
+| Severity | 영역 | 내용 |
+|---|---|---|
+| HIGH | schema | `PatientSchema.sex`를 `z.string()` → `z.enum(['male','female','other'])`. 라운드트립 type-safety 회복; 백엔드 drift는 422 ApiError로 surface |
+| HIGH | PatientList state | `onNext`를 순수 함수형(`p => p + 1`)으로 — 닫힘된 `view.totalPages` 의존 제거. `paginate()` clamp가 안전망 |
+| MEDIUM | a11y | Skeleton 컨테이너 `aria-hidden="false"` (no-op) → `role="status"` + `aria-live="polite"` + `aria-label=loading` |
+| MEDIUM | 검증 | `zodIssuesToFieldErrors`가 unkeyed issue를 silently drop하던 경로 → 일반 에러 배너(role="alert")로 surface |
+| MEDIUM | PII | `PatientRegisterForm` name `autoComplete="name"` → `"off"`; 숫자 필드(age/height/weight)에 명시적 `"off"` 추가 (공유 임상 워크스테이션의 browser autofill 방지) |
+| MEDIUM | XSS-adjacent | `PatientDetail`이 URL-derived `patientId`를 `EmptyState`에 반사하던 경로 → `/^[A-Za-z0-9_-]{1,32}$/` clamp |
+| MEDIUM | 라우팅 정확성 | `NotFoundPage`가 `window.location.pathname` 사용 → `useLocation().pathname` (MemoryRouter 테스트 정확성) |
+| LOW | 문서 | `EmptyState.description` JSDoc에 unsanitized HTML 금지 안내 |
+
+### 8.7.2 Deferred (검증 필요)
+
+- **`useCreatePatientMutation` signal 전달**: typescript-reviewer가 제안한 `mutationFn: (input, { signal }) => ...` 시그니처는 TanStack Query v5의 공식 API와 일치하지 않음. v5 mutation은 `mutationFn: (variables) => Promise<TData>` 단일 인자. 별도 PR에서 v5 문서 재확인 후 결정 (필요 시 명시적 AbortController 패턴 도입).
+- **PatientList Modal의 `keepMounted` 가능성**: 현재 Modal은 `isOpen=false`일 때 unmount되므로 form state도 reset됨. 향후 성능 최적화로 keepMounted 채택 시 명시적 reset 필요 — Phase 4 진입 시 재평가.
+
+### 8.7.3 Carry-over (다음 phase로 전달)
+
+- TanStack Query v5의 mutation signal 패턴 검증 (위 8.7.2)
+- ESLint typed-aware rules(`no-unnecessary-type-assertion`, `no-unsafe-argument`) 도입 검토 (post-Phase-2 LOW에서 보류)
+- 가끔 1-test flake가 시작 시 baseline 측정 중 발생, 재실행 시 사라짐 — Phase 4 차트 테스트 추가 시점에 server.use 격리 재검토

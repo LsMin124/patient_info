@@ -22,3 +22,16 @@
   gap: var(--space-2);
   margin-top: var(--space-2);
 }
+
+.patient-register-form__banner {
+  background: var(--color-danger-bg);
+  color: var(--color-fg);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.patient-register-form__banner p {
+  margin: 0;
+}

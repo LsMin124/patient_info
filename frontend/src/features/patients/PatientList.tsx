@@ -84,7 +84,9 @@ export function PatientList() {
         onRetry={() => query.refetch()}
         view={view}
         onPrev={() => setPage((p) => Math.max(1, p - 1))}
-        onNext={() => setPage((p) => Math.min(view.totalPages, p + 1))}
+        // Pure functional update; `paginate()` in lib/list.ts re-clamps page
+        // each render so we never depend on the closure-captured totalPages.
+        onNext={() => setPage((p) => p + 1)}
       />
 
       <Modal
@@ -112,7 +114,12 @@ function PatientListBody({ isLoading, isError, error, onRetry, view, onPrev, onN
   const { t } = useT()
   if (isLoading) {
     return (
-      <div className="patient-list__skeletons" aria-hidden="false">
+      <div
+        className="patient-list__skeletons"
+        role="status"
+        aria-live="polite"
+        aria-label={t('common.loading')}
+      >
         {Array.from({ length: 6 }).map((_, i) => (
           <Skeleton key={i} height="2.5rem" />
         ))}
