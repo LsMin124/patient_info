@@ -106,6 +106,6 @@ git checkout -b phase/(N+1)-<topic>
 | 회차 | 시작 | 머지 SHA | reviewer 호출 | 적용된 fix 카테고리 | IMPL_SPEC 절 |
 |---|---|---|---|---|---|
 | post-Phase-2 | 2026-05-10 | 951e374 | typescript / java / security | 자격증명 외부화, Number 캐스트, sourcemap hidden, Locale/Theme Context, http sanitization, EM clear, 값 단언, Modal/Toast 테스트, fixture 가명화 | `IMPL_SPEC.md §8` |
-| post-Phase-3 | 2026-05-11 | (머지 후 채움) | typescript / security (java 생략 — backend 변경 0) | PatientSchema.sex enum 정렬, PatientList 함수형 setPage, Skeleton a11y(`role="status"`), zod 일반 에러 배너, autoComplete='off' 클리닉 PII 보호, PatientDetail URL clamp, NotFound `useLocation`, EmptyState JSDoc | `IMPL_SPEC.md §8.7` |
+| post-Phase-3 | 2026-05-11 | 0de65d1 | typescript / security (java 생략 — backend 변경 0) | PatientSchema.sex enum 정렬, PatientList 함수형 setPage, Skeleton a11y(`role="status"`), zod 일반 에러 배너, autoComplete='off' 클리닉 PII 보호, PatientDetail URL clamp, NotFound `useLocation`, EmptyState JSDoc | `IMPL_SPEC.md §8.7` |
 
 > 매 phase 종료 시 위 표에 1행 추가.
