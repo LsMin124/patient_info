@@ -57,6 +57,20 @@ export const en: Translations = {
       noDataHint: 'This session has no stored data points.',
       inProgressHint: 'Measurement in progress — data points are being added.',
     },
+    compare: {
+      title: 'Compare sessions',
+      tooFew: 'Not enough sessions to compare',
+      tooFewHint: 'The URL needs at least two measurement IDs (e.g. /sessions/compare?ids=1,2).',
+      tooMany: 'Up to 4 sessions can be compared at once',
+      tooManyHint: 'Comparison is capped at 4 for readability.',
+      legend: 'Legend',
+      table: {
+        session: 'Session',
+        memo: 'Memo',
+        peak: 'Peak (N)',
+        impulse: 'Impulse (N·s)',
+      },
+    },
     chart: {
       forceLabel: 'Force (N)',
       timeLabel: 'Time (s)',

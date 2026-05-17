@@ -59,6 +59,20 @@ export interface Translations {
       noDataHint: string
       inProgressHint: string
     }
+    compare: {
+      title: string
+      tooFew: string
+      tooFewHint: string
+      tooMany: string
+      tooManyHint: string
+      legend: string
+      table: {
+        session: string
+        memo: string
+        peak: string
+        impulse: string
+      }
+    }
     chart: {
       forceLabel: string
       timeLabel: string

@@ -57,6 +57,21 @@ export const ko: Translations = {
       noDataHint: '이 세션은 저장된 데이터 포인트가 없습니다.',
       inProgressHint: '측정 진행 중입니다. 데이터가 추가되는 중입니다.',
     },
+    compare: {
+      title: '세션 비교',
+      tooFew: '비교할 세션이 부족합니다',
+      tooFewHint:
+        'URL에 두 개 이상의 측정 ID가 필요합니다. /sessions/compare?ids=1,2 형태로 접근하세요.',
+      tooMany: '최대 4개까지만 비교할 수 있습니다',
+      tooManyHint: '가독성 확보를 위해 동시 비교는 4개로 제한됩니다.',
+      legend: '범례',
+      table: {
+        session: '세션',
+        memo: '메모',
+        peak: '피크 (N)',
+        impulse: '면적 (N·s)',
+      },
+    },
     chart: {
       forceLabel: '힘 (N)',
       timeLabel: '시간 (s)',

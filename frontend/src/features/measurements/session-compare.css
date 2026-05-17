@@ -1,0 +1,49 @@
+.session-compare {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.session-compare h1 {
+  font-size: var(--text-2xl);
+  margin: 0;
+}
+
+.session-compare__skeletons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.session-compare__table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.session-compare__table th,
+.session-compare__table td {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  font-variant-numeric: tabular-nums;
+}
+
+.session-compare__table th {
+  background: var(--color-surface-raised);
+  font-size: var(--text-sm);
+  color: var(--color-fg-muted);
+  font-weight: 600;
+}
+
+.session-compare__swatch {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: var(--radius-sm);
+  margin-right: var(--space-2);
+  vertical-align: middle;
+}
