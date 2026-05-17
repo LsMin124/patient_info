@@ -107,6 +107,6 @@ git checkout -b phase/(N+1)-<topic>
 |---|---|---|---|---|---|
 | post-Phase-2 | 2026-05-10 | 951e374 | typescript / java / security | 자격증명 외부화, Number 캐스트, sourcemap hidden, Locale/Theme Context, http sanitization, EM clear, 값 단언, Modal/Toast 테스트, fixture 가명화 | `IMPL_SPEC.md §8` |
 | post-Phase-3 | 2026-05-11 | 0de65d1 | typescript / security (java 생략 — backend 변경 0) | PatientSchema.sex enum 정렬, PatientList 함수형 setPage, Skeleton a11y(`role="status"`), zod 일반 에러 배너, autoComplete='off' 클리닉 PII 보호, PatientDetail URL clamp, NotFound `useLocation`, EmptyState JSDoc | `IMPL_SPEC.md §8.7` |
-| post-Phase-4 | 2026-05-15 | (머지 후 채움) | typescript / security (java 생략 — backend 변경 0) | ChartJS `Title` 등록, LTTB tail-bias fix, query-key `__disabled__` sentinel, CSV revoke 지연(Safari/Firefox), force_n toFixed(6), SessionDetail per-query 에러 정밀화, 세션 i18n 키 6건, Phase 5 parser contract 박제 | `IMPL_SPEC.md §8.8` |
+| post-Phase-4 | 2026-05-15 | a88a3c8 | typescript / security (java 생략 — backend 변경 0) | ChartJS `Title` 등록, LTTB tail-bias fix, query-key `__disabled__` sentinel, CSV revoke 지연(Safari/Firefox), force_n toFixed(6), SessionDetail per-query 에러 정밀화, 세션 i18n 키 6건, Phase 5 parser contract 박제 | `IMPL_SPEC.md §8.8` |
 
 > 매 phase 종료 시 위 표에 1행 추가.
