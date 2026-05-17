@@ -51,8 +51,7 @@ describe('Modal', () => {
     expect(onClose).toHaveBeenCalled()
   })
 
-  it('Tab wraps focus from last focusable back to first', async () => {
-    const user = userEvent.setup()
+  it('Tab wraps focus from last focusable back to first', () => {
     render(
       <Modal isOpen={true} onClose={() => {}} title="t">
         <input aria-label="first" />
@@ -63,19 +62,18 @@ describe('Modal', () => {
     const closeBtn = screen.getByRole('button', { name: '닫기' })
     const lastBtn = screen.getByRole('button', { name: 'last' })
 
-    // Focus the last interactive element directly (jsdom does not fire
-    // requestAnimationFrame synchronously, so the modal's initial-focus
-    // effect may not have run yet — but the focus-trap key handler does
-    // not depend on it; it computes the focusable list each Tab event).
+    // Dispatch the Tab key directly against document — Modal's trap listens
+    // there. user.tab() proved unreliable when other tests in the suite left
+    // stale focus context behind; direct event avoids that contamination.
     lastBtn.focus()
     expect(document.activeElement).toBe(lastBtn)
 
-    await user.tab()
+    const evt = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })
+    document.dispatchEvent(evt)
     expect(document.activeElement).toBe(closeBtn)
   })
 
-  it('Shift+Tab wraps focus from first focusable back to last', async () => {
-    const user = userEvent.setup()
+  it('Shift+Tab wraps focus from first focusable back to last', () => {
     render(
       <Modal isOpen={true} onClose={() => {}} title="t">
         <input aria-label="first" />
@@ -87,7 +85,13 @@ describe('Modal', () => {
 
     closeBtn.focus()
     expect(document.activeElement).toBe(closeBtn)
-    await user.tab({ shift: true })
+    const evt = new KeyboardEvent('keydown', {
+      key: 'Tab',
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true,
+    })
+    document.dispatchEvent(evt)
     expect(document.activeElement).toBe(lastBtn)
   })
 })
