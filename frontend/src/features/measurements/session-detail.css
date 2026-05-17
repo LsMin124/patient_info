@@ -1,0 +1,43 @@
+.session-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.session-detail__header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.session-detail__header h1 {
+  font-size: var(--text-2xl);
+  margin: 0;
+}
+
+.session-detail__patient-id {
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  font-weight: 400;
+  color: var(--color-fg-muted);
+}
+
+.session-detail__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0 0;
+  color: var(--color-fg-muted);
+  font-size: var(--text-sm);
+}
+
+.session-detail__badge {
+  font-size: var(--text-xs);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-pill);
+  padding: 0 var(--space-2);
+  font-weight: 600;
+}
