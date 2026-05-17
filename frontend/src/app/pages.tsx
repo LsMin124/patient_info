@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 
+import { SessionDetail } from '../features/measurements/SessionDetail'
 import { PatientDetail } from '../features/patients/PatientDetail'
 import { PatientList } from '../features/patients/PatientList'
 import { useT } from '../shared/hooks/useT'
@@ -35,12 +36,7 @@ export function PatientDetailPage() {
 }
 
 export function SessionDetailPage() {
-  return (
-    <div>
-      <h1>세션 상세</h1>
-      <EmptyState title="준비 중" description="Phase 4 T27에서 구현됩니다." />
-    </div>
-  )
+  return <SessionDetail />
 }
 
 export function SessionComparePage() {

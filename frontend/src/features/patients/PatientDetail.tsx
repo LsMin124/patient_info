@@ -5,6 +5,7 @@ import { Button } from '../../shared/ui/Button'
 import { EmptyState } from '../../shared/ui/EmptyState'
 import { ErrorFallback } from '../../shared/ui/ErrorFallback'
 import { Skeleton } from '../../shared/ui/Loading'
+import { SessionList } from '../measurements/SessionList'
 
 import { usePatientsQuery } from './usePatients'
 
@@ -91,10 +92,7 @@ export function PatientDetail() {
         <h2 id="sessions-heading" className="patient-detail__section-title">
           {t('session.list.title')}
         </h2>
-        <EmptyState
-          title={t('session.list.empty')}
-          description="Phase 4에서 세션 타임라인이 추가됩니다."
-        />
+        <SessionList patientId={patient.patientId} />
       </section>
     </section>
   )
