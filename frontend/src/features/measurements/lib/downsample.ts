@@ -37,15 +37,28 @@ export function lttbDownsample(points: ReadonlyArray<DataPoint>, threshold: numb
     // Next bucket's average (point c) — anchor for the triangle.
     const nextStart = Math.floor((i + 1) * bucketSize) + 1
     const nextEnd = Math.min(Math.floor((i + 2) * bucketSize) + 1, n)
-    const nextLen = nextEnd - nextStart || 1
-    let avgX = 0
-    let avgY = 0
-    for (let k = nextStart; k < nextEnd; k += 1) {
-      avgX += points[k]!.timeOffsetMs
-      avgY += points[k]!.kgValue
+    let avgX: number
+    let avgY: number
+    if (nextEnd > nextStart) {
+      const nextLen = nextEnd - nextStart
+      let sumX = 0
+      let sumY = 0
+      for (let k = nextStart; k < nextEnd; k += 1) {
+        sumX += points[k]!.timeOffsetMs
+        sumY += points[k]!.kgValue
+      }
+      avgX = sumX / nextLen
+      avgY = sumY / nextLen
+    } else {
+      // Last bucket can collapse to length 0 when bucketSize is fractional
+      // and we are near the tail. Fall back to the nearest in-range sample
+      // so the triangle area stays anchored on real data instead of (0,0),
+      // which would bias selection toward the time-axis origin and drop
+      // late-curve peaks.
+      const fallbackIdx = Math.min(nextStart, n - 1)
+      avgX = points[fallbackIdx]!.timeOffsetMs
+      avgY = points[fallbackIdx]!.kgValue
     }
-    avgX /= nextLen
-    avgY /= nextLen
 
     // Current bucket — pick the point that maximises triangle area with
     // (a, c).

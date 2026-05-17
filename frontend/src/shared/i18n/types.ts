@@ -48,7 +48,16 @@ export interface Translations {
     list: {
       title: string
       empty: string
+      emptyHint: string
       inProgress: string
+      noMemo: string
+    }
+    detail: {
+      notFound: string
+      notFoundHint: string
+      noData: string
+      noDataHint: string
+      inProgressHint: string
     }
     chart: {
       forceLabel: string
