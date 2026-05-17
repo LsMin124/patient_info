@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 
+import { SessionCompare } from '../features/measurements/SessionCompare'
 import { SessionDetail } from '../features/measurements/SessionDetail'
 import { PatientDetail } from '../features/patients/PatientDetail'
 import { PatientList } from '../features/patients/PatientList'
@@ -40,12 +41,7 @@ export function SessionDetailPage() {
 }
 
 export function SessionComparePage() {
-  return (
-    <div>
-      <h1>세션 비교</h1>
-      <EmptyState title="준비 중" description="Phase 5 T28에서 구현됩니다." />
-    </div>
-  )
+  return <SessionCompare />
 }
 
 export function SettingsPage() {
