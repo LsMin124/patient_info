@@ -71,12 +71,7 @@ export function SessionList({ patientId }: SessionListProps) {
     )
   }
   if (sortedSessions.length === 0) {
-    return (
-      <EmptyState
-        title={t('session.list.empty')}
-        description="디바이스로 첫 측정을 진행해 보세요."
-      />
-    )
+    return <EmptyState title={t('session.list.empty')} description={t('session.list.emptyHint')} />
   }
 
   const toggle = (id: number) => {
@@ -103,6 +98,13 @@ export function SessionList({ patientId }: SessionListProps) {
       </ul>
       {selected.size >= 2 && (
         <nav className="session-list__compare" aria-label="compare">
+          {/*
+            The `?ids=` payload is built from server-trusted measurementId
+            integers. The Phase 5 compare page MUST re-validate each
+            segment (regex /^\d{1,15}$/ + positive-integer guard, cap
+            array length to <= 4) because the same URL can be crafted by
+            hand. See post-Phase-4 security review note.
+          */}
           <Link to={`/sessions/compare?ids=${[...selected].sort((a, b) => a - b).join(',')}`}>
             <Button>{`선택한 ${selected.size}개 비교`}</Button>
           </Link>
@@ -136,7 +138,7 @@ function SessionRow({ patientId, session, isSelected, onToggle }: SessionRowProp
         className="session-list__link"
       >
         <span className="session-list__time">{formatStart(session.startTime)}</span>
-        <span className="session-list__memo">{session.memo ?? '메모 없음'}</span>
+        <span className="session-list__memo">{session.memo ?? t('session.list.noMemo')}</span>
         {inProgress && <span className="session-list__badge">{t('session.list.inProgress')}</span>}
       </Link>
     </li>

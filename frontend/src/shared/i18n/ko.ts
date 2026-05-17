@@ -46,7 +46,16 @@ export const ko: Translations = {
     list: {
       title: '측정 세션',
       empty: '측정 기록이 없습니다.',
+      emptyHint: '디바이스로 첫 측정을 진행해 보세요.',
       inProgress: '측정 진행 중',
+      noMemo: '메모 없음',
+    },
+    detail: {
+      notFound: '세션을 찾을 수 없습니다',
+      notFoundHint: '요청한 세션 ID가 잘못되었거나, 이 환자의 세션이 아닙니다.',
+      noData: '데이터가 없습니다',
+      noDataHint: '이 세션은 저장된 데이터 포인트가 없습니다.',
+      inProgressHint: '측정 진행 중입니다. 데이터가 추가되는 중입니다.',
     },
     chart: {
       forceLabel: '힘 (N)',

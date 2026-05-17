@@ -1454,3 +1454,29 @@ Phase 3 (T18–T21, 환자 관리) 머지 후 typescript-reviewer + security-rev
 - TanStack Query v5의 mutation signal 패턴 검증 (위 8.7.2)
 - ESLint typed-aware rules(`no-unnecessary-type-assertion`, `no-unsafe-argument`) 도입 검토 (post-Phase-2 LOW에서 보류)
 - 가끔 1-test flake가 시작 시 baseline 측정 중 발생, 재실행 시 사라짐 — Phase 4 차트 테스트 추가 시점에 server.use 격리 재검토
+
+---
+
+## 8.8 Plan Review v4 (post-Phase-4, 2026-05-15)
+
+Phase 4 (T22~T27, 세션·차트) 머지 후 typescript-reviewer + security-reviewer 병렬 감사. Phase 4는 백엔드 변경 0이라 java-reviewer 생략.
+
+### 8.8.1 적용된 fix (HIGH + MEDIUM)
+
+| Severity | 영역 | 내용 |
+|---|---|---|
+| HIGH | ChartJS | `chartSetup.ts`에 `Title` 플러그인 등록 — 운영 tree-shake 빌드에서 axis title이 silently 미렌더되던 회귀 차단 |
+| HIGH | LTTB tail-bias | `lib/downsample.ts`: 마지막 bucket이 length 0으로 collapse될 때 (0,0) anchor로 인해 늦은 피크가 손실되던 boundary case를 nearest-in-range fallback으로 교체 |
+| HIGH | query key 충돌 | `useMeasurements.ts`: disabled 상태에 `__disabled__` sentinel key 사용 — 가설적 실제 `''` patientId / `-1` measurementId와 cache 충돌 차단 |
+| HIGH | CSV revoke race | `exportCsv.ts`: `URL.revokeObjectURL`을 `setTimeout(..., 0)`으로 deferred — Safari/Firefox 다운로드 drop 방지 |
+| MEDIUM | CSV 정밀도 | `force_n`을 `toFixed(6)`로 — 화면 툴팁(2자리)과 일관, 정밀도 손실 없음 |
+| MEDIUM | SessionDetail error | 세 쿼리 OR 대신 per-query 정밀 — stale-cache가 살아있는 쿼리는 폴백으로 덮어쓰지 않음 |
+| LOW | i18n | `SessionDetail`/`SessionList`의 한국어 하드코딩 6건을 `session.detail.*` / `session.list.{emptyHint,noMemo}` 키로 라우팅 |
+| LOW | Phase 5 contract | `SessionList.tsx` `?ids=` 빌더에 향후 compare 페이지 parser 컨트랙트(정규식 + ≤4 cap) JSX 주석 박제 |
+
+### 8.8.2 Deferred / Carry-over
+
+- TanStack Query v5 mutation signal 패턴 (post-Phase-3 §8.7.2 이월) — Phase 7 또는 별도 PR.
+- ESLint typed-aware rules — post-Phase-2 LOW에서 이월, 여전히 미반영.
+- MSW `listSessionsReturning`/`getDataPointsReturning` builder가 path param 무시 — 테스트 격리 한정 이슈로 Phase 5 compare 작업 시 같이 보강.
+- 단일 샘플 SummaryStats 케이스는 추가 완료 (단 reviewer가 지적한 `??` redundancy는 방어 코드로 유지).

@@ -58,16 +58,23 @@ export function SessionDetail() {
     )
   }
 
-  if (patientsQuery.isError || sessionsQuery.isError || dataQuery.isError) {
+  // Per-query error precedence: only the queries whose data is actually
+  // missing should trigger the fallback. A transient 500 on a still-cached
+  // patients/sessions query (with stale data available) should not wipe out
+  // the rendered chart — that was the post-Phase-4 review finding.
+  const patientMissing = !patientsQuery.data && patientsQuery.isError
+  const sessionsMissing = !sessionsQuery.data && sessionsQuery.isError
+  const dataMissing = !dataQuery.data && dataQuery.isError
+  if (patientMissing || sessionsMissing || dataMissing) {
     const err = patientsQuery.error ?? sessionsQuery.error ?? dataQuery.error
     return (
       <SessionShell>
         <ErrorFallback
           error={err}
           onReset={() => {
-            patientsQuery.refetch()
-            sessionsQuery.refetch()
-            dataQuery.refetch()
+            if (patientMissing) patientsQuery.refetch()
+            if (sessionsMissing) sessionsQuery.refetch()
+            if (dataMissing) dataQuery.refetch()
           }}
           title={t('common.error')}
         />
@@ -95,7 +102,7 @@ export function SessionDetail() {
             {patient.name} <span className="session-detail__patient-id">({patient.patientId})</span>
           </h1>
           <p className="session-detail__meta">
-            {session.memo ?? '메모 없음'} · {session.startTime}
+            {session.memo ?? t('session.list.noMemo')} · {session.startTime}
             {inProgress && (
               <span className="session-detail__badge">{t('session.list.inProgress')}</span>
             )}
@@ -112,11 +119,9 @@ export function SessionDetail() {
 
       {points.length === 0 ? (
         <EmptyState
-          title="데이터가 없습니다"
+          title={t('session.detail.noData')}
           description={
-            inProgress
-              ? '측정 진행 중입니다. 데이터가 추가되는 중입니다.'
-              : '이 세션은 저장된 데이터 포인트가 없습니다.'
+            inProgress ? t('session.detail.inProgressHint') : t('session.detail.noDataHint')
           }
         />
       ) : (
@@ -136,8 +141,8 @@ function SessionShell({ children }: { children: ReactNode }) {
 function NotFound({ t, patientId }: { t: ReturnType<typeof useT>['t']; patientId: string | null }) {
   return (
     <EmptyState
-      title="세션을 찾을 수 없습니다"
-      description="요청한 세션 ID가 잘못되었거나, 이 환자의 세션이 아닙니다."
+      title={t('session.detail.notFound')}
+      description={t('session.detail.notFoundHint')}
       action={
         <Link to={patientId ? `/patients/${patientId}` : '/patients'}>
           <Button variant="secondary">{t('patient.list.title')}</Button>

@@ -14,9 +14,17 @@ import type { DataPoint } from '../schema'
 const BOM = '﻿'
 const HEADER = 'time_offset_ms,force_n,kg_value'
 
+/**
+ * Fractional digits for the derived force_n column. 6 is past the visible
+ * tooltip precision (2) but well below IEEE 754 double's 15-significant-
+ * digit limit, so clinical staff reading the export against the on-screen
+ * tooltip see consistent numbers without losing precision they actually need.
+ */
+const FORCE_N_DIGITS = 6
+
 export function buildCsv(points: ReadonlyArray<DataPoint>): string {
   const rows = points.map((p) => {
-    const forceN = kgfToN(p.kgValue)
+    const forceN = kgfToN(p.kgValue).toFixed(FORCE_N_DIGITS)
     return `${p.timeOffsetMs},${forceN},${p.kgValue}`
   })
   return BOM + [HEADER, ...rows].join('\r\n') + '\r\n'
@@ -51,5 +59,8 @@ export function downloadSessionCsv(
   document.body.appendChild(anchor)
   anchor.click()
   document.body.removeChild(anchor)
-  URL.revokeObjectURL(url)
+  // Defer revocation: Safari and Firefox can drop the download if the
+  // blob URL is revoked on the same tick as anchor.click(); Chromium
+  // tolerates it but the deferred path is correct everywhere.
+  window.setTimeout(() => URL.revokeObjectURL(url), 0)
 }

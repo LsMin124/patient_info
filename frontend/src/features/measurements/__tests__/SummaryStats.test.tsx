@@ -51,4 +51,16 @@ describe('SummaryStats', () => {
     // impulse present with N·s suffix
     expect(screen.getByText(/N·s$/)).toBeInTheDocument()
   })
+
+  it('handles a single-sample session: peak/mean render, RFD/impulse are "-"', () => {
+    // computeSessionStats returns peak = mean = sample*N, timeToPeak = 0,
+    // and null for both RFD windows + impulse. The UI must render the
+    // peak/mean values and '-' for the null fields without crashing.
+    const points: DataPoint[] = [{ timeOffsetMs: 0, kgValue: 5 }]
+    render(<SummaryStats points={points} />, { wrapper })
+    expect(screen.getAllByText('49.03 N').length).toBeGreaterThanOrEqual(2) // peak + mean
+    expect(screen.getByText('0 ms')).toBeInTheDocument()
+    // 3 nulls: rfd0_100, rfd100_200, impulse → 3 dashes
+    expect(screen.getAllByText('-')).toHaveLength(3)
+  })
 })

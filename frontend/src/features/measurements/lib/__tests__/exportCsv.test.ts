@@ -23,10 +23,11 @@ describe('buildCsv', () => {
   it('emits one row per data point with force_n derived via kgfToN', () => {
     const lines = buildCsv(points).slice(1).split('\r\n').filter(Boolean)
     expect(lines).toHaveLength(4) // header + 3 rows
-    expect(lines[1]).toBe(`0,0,0`)
-    expect(lines[2]).toBe(`50,${1.5 * KGF_TO_N},1.5`)
+    // force_n is formatted to 6 fixed decimals; kg_value remains raw.
+    expect(lines[1]).toBe(`0,${(0).toFixed(6)},0`)
+    expect(lines[2]).toBe(`50,${(1.5 * KGF_TO_N).toFixed(6)},1.5`)
     // negative kg (sensor noise) preserved, not clamped
-    expect(lines[3]).toBe(`100,${-0.2 * KGF_TO_N},-0.2`)
+    expect(lines[3]).toBe(`100,${(-0.2 * KGF_TO_N).toFixed(6)},-0.2`)
   })
 
   it('uses CRLF line endings and a trailing newline', () => {
@@ -56,24 +57,39 @@ describe('downloadSessionCsv', () => {
   let revokeObjectURL: ReturnType<typeof vi.fn>
   let clickSpy: ReturnType<typeof vi.fn>
 
+  let originalCreate: typeof URL.createObjectURL | undefined
+  let originalRevoke: typeof URL.revokeObjectURL | undefined
+
   beforeEach(() => {
+    vi.useFakeTimers()
     createObjectURL = vi.fn(() => 'blob:mock')
     revokeObjectURL = vi.fn()
-    vi.stubGlobal('URL', { ...URL, createObjectURL, revokeObjectURL })
+    // Assign properties instead of stubbing the whole URL global — the
+    // global stub form breaks MSW's URL parsing in unrelated tests.
+    originalCreate = URL.createObjectURL
+    originalRevoke = URL.revokeObjectURL
+    URL.createObjectURL = createObjectURL as typeof URL.createObjectURL
+    URL.revokeObjectURL = revokeObjectURL as typeof URL.revokeObjectURL
     clickSpy = vi.fn()
-    // jsdom anchors have no real click navigation; spy on the prototype.
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(clickSpy)
   })
 
   afterEach(() => {
-    vi.unstubAllGlobals()
+    vi.useRealTimers()
+    if (originalCreate) URL.createObjectURL = originalCreate
+    else delete (URL as Partial<typeof URL>).createObjectURL
+    if (originalRevoke) URL.revokeObjectURL = originalRevoke
+    else delete (URL as Partial<typeof URL>).revokeObjectURL
     vi.restoreAllMocks()
   })
 
-  it('creates a blob URL, clicks a download anchor, and revokes the URL', () => {
+  it('creates a blob URL, clicks a download anchor, and DEFERS revocation', () => {
     downloadSessionCsv(101, '2026-05-01T10:30:00', points)
     expect(createObjectURL).toHaveBeenCalledOnce()
     expect(clickSpy).toHaveBeenCalledOnce()
+    // Revoke is scheduled but has not fired yet (Safari/Firefox download race).
+    expect(revokeObjectURL).not.toHaveBeenCalled()
+    vi.runAllTimers()
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock')
   })
 

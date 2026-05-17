@@ -46,7 +46,16 @@ export const en: Translations = {
     list: {
       title: 'Sessions',
       empty: 'No measurement sessions yet.',
+      emptyHint: 'Start a measurement from the device to populate this list.',
       inProgress: 'Measurement in progress',
+      noMemo: 'No memo',
+    },
+    detail: {
+      notFound: 'Session not found',
+      notFoundHint: 'The requested session ID is invalid or does not belong to this patient.',
+      noData: 'No data',
+      noDataHint: 'This session has no stored data points.',
+      inProgressHint: 'Measurement in progress — data points are being added.',
     },
     chart: {
       forceLabel: 'Force (N)',

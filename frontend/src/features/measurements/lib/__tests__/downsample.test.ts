@@ -65,4 +65,17 @@ describe('lttbDownsample', () => {
     const out = lttbDownsample(points, 20) // length <= threshold path
     expect(out).not.toBe(points)
   })
+
+  it('retains a late-curve peak when bucketSize is fractional (tail-bias guard)', () => {
+    // Non-divisible n forces fractional bucketSize so the final bucket can
+    // collapse to length 0 — the boundary case that biased prior versions
+    // toward the time-axis origin and dropped tail peaks.
+    const peakValue = 100
+    const peakIdx = 9_500
+    const points = mkSpike(10_001, peakIdx, peakValue)
+    const out = lttbDownsample(points, 1500)
+    const observedPeak = Math.max(...out.map((p) => p.kgValue))
+    const loss = (peakValue - observedPeak) / peakValue
+    expect(loss).toBeLessThan(0.05)
+  })
 })
