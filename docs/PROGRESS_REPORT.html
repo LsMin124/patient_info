@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Patient Info Web Rebuild — 진행 리포트</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: oklch(98% 0.005 240);
+    --surface: #fff;
+    --raised: oklch(99% 0.005 240);
+    --border: oklch(88% 0.01 240);
+    --fg: oklch(20% 0.02 240);
+    --muted: oklch(45% 0.02 240);
+    --accent: oklch(58% 0.16 250);
+    --success: oklch(56% 0.14 150);
+    --warning: oklch(70% 0.16 80);
+    --danger: oklch(55% 0.21 25);
+    --r: 0.5rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: oklch(15% 0.012 240);
+      --surface: oklch(19% 0.014 240);
+      --raised: oklch(22% 0.015 240);
+      --border: oklch(30% 0.02 240);
+      --fg: oklch(96% 0.005 240);
+      --muted: oklch(75% 0.015 240);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Pretendard Variable', Pretendard, -apple-system,
+      BlinkMacSystemFont, 'Segoe UI', Roboto, 'Apple SD Gothic Neo',
+      'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.55;
+  }
+  main { max-width: 1024px; margin: 0 auto; padding: 2.5rem 1.5rem 5rem; }
+  header.hero { margin-bottom: 2.5rem; }
+  header.hero h1 { font-size: clamp(1.75rem, 1.2rem + 1.8vw, 2.5rem); margin: 0 0 0.5rem; }
+  header.hero .lede { color: var(--muted); font-size: 1.05rem; max-width: 56ch; }
+  header.hero .meta {
+    display: flex; gap: 1rem; flex-wrap: wrap;
+    margin-top: 1rem; font-size: 0.875rem; color: var(--muted);
+  }
+  header.hero .meta strong { color: var(--fg); }
+
+  section { margin-block: 2rem; }
+  section h2 {
+    font-size: 1.25rem; margin: 0 0 1rem; padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .grid {
+    display: grid; gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 1.25rem;
+  }
+  .card .num { font-size: 2rem; font-weight: 800; line-height: 1.1; }
+  .card .label { color: var(--muted); font-size: 0.875rem;
+    text-transform: uppercase; letter-spacing: 0.04em; }
+  .card .sub { color: var(--muted); font-size: 0.85rem; margin-top: 0.25rem; }
+
+  table { width: 100%; border-collapse: collapse; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+  th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+  th { background: var(--raised); font-weight: 600; font-size: 0.85rem; color: var(--muted); }
+  tr:last-child td { border-bottom: none; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    padding: 0.1rem 0.55rem; border-radius: 999px;
+    font-size: 0.75rem; font-weight: 600;
+  }
+  .badge--done { background: oklch(92% 0.08 150); color: oklch(35% 0.14 150); }
+  .badge--wip  { background: oklch(94% 0.08 80);  color: oklch(40% 0.16 80); }
+  .badge--todo { background: oklch(92% 0.005 240); color: var(--muted); }
+  @media (prefers-color-scheme: dark) {
+    .badge--done { background: oklch(28% 0.08 150); color: oklch(82% 0.14 150); }
+    .badge--wip  { background: oklch(28% 0.08 80);  color: oklch(85% 0.16 80); }
+    .badge--todo { background: oklch(28% 0.005 240); color: var(--muted); }
+  }
+
+  .progress {
+    width: 100%; height: 0.5rem; background: var(--raised);
+    border-radius: 999px; overflow: hidden; margin-top: 0.4rem;
+  }
+  .progress > span {
+    display: block; height: 100%; background: var(--accent);
+  }
+
+  .pill {
+    background: var(--raised); border: 1px solid var(--border);
+    border-radius: 999px; padding: 0.15rem 0.55rem; font-size: 0.78rem;
+    color: var(--muted); display: inline-block;
+  }
+
+  details {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+  }
+  details > summary { cursor: pointer; font-weight: 600; }
+  details ul { margin: 0.5rem 0 0; padding-left: 1.25rem; }
+  details li { margin-block: 0.2rem; }
+
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+  footer { margin-top: 4rem; color: var(--muted); font-size: 0.8rem; }
+</style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <h1>환자 근력측정 웹 리빌드 — 진행 리포트</h1>
+    <p class="lede">
+      디바이스/앱과의 와이어 계약을 보존하면서 기존 웹 인터페이스를
+      React 19 + Vite 6 + TS 5로 재작성합니다. 본 리포트는 Phase 5
+      (세션 비교) 종료 시점의 스냅샷입니다.
+    </p>
+    <div class="meta">
+      <span><strong>Date</strong> 2026-05-15</span>
+      <span><strong>Branch</strong> <code>main</code></span>
+      <span><strong>Phases done</strong> 0 · 1 · 2 · 3 · 4 · 5 (+ 4 review cycles)</span>
+    </div>
+  </header>
+
+  <section>
+    <h2>핵심 지표</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="label">Frontend 단위 테스트</div>
+        <div class="num">214</div>
+        <div class="sub">모두 그린, 30개 테스트 파일</div>
+      </div>
+      <div class="card">
+        <div class="label">Playwright E2E</div>
+        <div class="num">9</div>
+        <div class="sub">smoke 4 + session-detail 2 + session-compare 3</div>
+      </div>
+      <div class="card">
+        <div class="label">Backend MockMvc 컨트랙트</div>
+        <div class="num">15</div>
+        <div class="sub">디바이스/앱 와이어 회귀 차단</div>
+      </div>
+      <div class="card">
+        <div class="label">진척률</div>
+        <div class="num">75%</div>
+        <div class="progress"><span style="width:75%"></span></div>
+        <div class="sub">6/8 phase 완료 (T28까지)</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Phase 진행 상황</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Phase</th><th>주제</th><th>상태</th><th>리뷰</th><th>주요 산출물</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>0</strong></td>
+          <td>스캐폴드 + Gradle 통합</td>
+          <td><span class="badge badge--done">완료</span></td>
+          <td>—</td>
+          <td>frontend/ (Vite+React+TS), pnpm 9.15.9, ESLint·Prettier·Vitest·Playwright, Gradle <code>frontendSync</code></td>
+        </tr>
+        <tr>
+          <td><strong>1</strong></td>
+          <td>백엔드 컨트랙트 테스트</td>
+          <td><span class="badge badge--done">완료</span></td>
+          <td>—</td>
+          <td>h2 in-memory 프로파일, <code>ApiContractTestBase</code>, 7개 엔드포인트 회귀 보호</td>
+        </tr>
+        <tr>
+          <td><strong>2</strong></td>
+          <td>UI 셸 (T08–T17)</td>
+          <td><span class="badge badge--done">완료</span></td>
+          <td><span class="pill">v1</span></td>
+          <td>디자인 토큰, http 클라이언트, zod 스키마, UI 프리미티브, Locale/Theme Provider, AppShell, 404</td>
+        </tr>
+        <tr>
+          <td><strong>3</strong></td>
+          <td>환자 관리 (T18–T21)</td>
+          <td><span class="badge badge--done">완료</span></td>
+          <td><span class="pill">v3</span></td>
+          <td>PatientList (검색·페이지네이션), PatientRegisterForm (zod), PatientDetail, MSW 핸들러 허브</td>
+        </tr>
+        <tr>
+          <td><strong>4</strong></td>
+          <td>세션·차트 (T22–T27)</td>
+          <td><span class="badge badge--done">완료</span></td>
+          <td><span class="pill">v4</span></td>
+          <td>measurements API, ForceChart + LTTB vendor, SummaryStats, SessionList, CSV export, SessionDetail + E2E</td>
+        </tr>
+        <tr>
+          <td><strong>5</strong></td>
+          <td>세션 비교 (T28)</td>
+          <td><span class="badge badge--done">완료</span></td>
+          <td><span class="pill">v5</span></td>
+          <td>SessionCompare (overlay chart + stats table), compareIds 파서, parser contract 박제</td>
+        </tr>
+        <tr>
+          <td><strong>6</strong></td>
+          <td>인쇄 / 보고서 (T29)</td>
+          <td><span class="badge badge--todo">예정</span></td>
+          <td>—</td>
+          <td><code>@media print</code> 스타일, 보고서 시트, PII 마스킹 토글</td>
+        </tr>
+        <tr>
+          <td><strong>7</strong></td>
+          <td>백엔드 비파괴 보강 (T30–T33)</td>
+          <td><span class="badge badge--todo">예정</span></td>
+          <td>—</td>
+          <td>application.yml + 프로파일 분리, <code>@RestControllerAdvice</code>, CORS, T33 잔여</td>
+        </tr>
+        <tr>
+          <td><strong>8</strong></td>
+          <td>운영화 · 컷오버 (T34–T36)</td>
+          <td><span class="badge badge--todo">예정</span></td>
+          <td>—</td>
+          <td>README + RUNBOOK (HTML), GitHub Actions CI, 컷오버 검증</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>설계 결정 (요약)</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="label">스택</div>
+        <p style="margin:0.4rem 0 0">React 19 · Vite 6 · TS 5 strict · TanStack Query 5 · zod 3 · react-chartjs-2 · react-router-dom 7</p>
+      </div>
+      <div class="card">
+        <div class="label">단위</div>
+        <p style="margin:0.4rem 0 0">백엔드는 kg-force, UI는 모두 <strong>Newton</strong>. <code>KGF_TO_N = 9.80665</code> 단일 모듈에서 변환</p>
+      </div>
+      <div class="card">
+        <div class="label">호스팅</div>
+        <p style="margin:0.4rem 0 0">Spring Boot 동일 오리진. <code>frontendSync</code> 산출물이 <code>static/</code>으로 복사</p>
+      </div>
+      <div class="card">
+        <div class="label">와이어 계약</div>
+        <p style="margin:0.4rem 0 0"><code>measurement_Id</code> 대문자 I 포함 7개 키를 zod로 lock, MockMvc로 회귀 차단</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>리뷰 사이클 결과</h2>
+    <table>
+      <thead><tr><th>회차</th><th>리뷰어</th><th>HIGH</th><th>MEDIUM</th><th>LOW</th><th>핵심 fix</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>post-Phase-2</td><td>TS · Java · Security</td>
+          <td>4</td><td>11</td><td>5</td>
+          <td>자격증명 외부화, sourcemap hidden, Locale/Theme Context, http sanitization</td>
+        </tr>
+        <tr>
+          <td>post-Phase-3</td><td>TS · Security</td>
+          <td>2</td><td>5</td><td>1</td>
+          <td>schema sex enum, PatientList 함수형 setPage, autoComplete PII 보호, PatientDetail URL clamp</td>
+        </tr>
+        <tr>
+          <td>post-Phase-4</td><td>TS · Security</td>
+          <td>4</td><td>3</td><td>2</td>
+          <td>ChartJS Title 등록, LTTB tail-bias guard, query-key sentinel, CSV revoke 지연</td>
+        </tr>
+        <tr>
+          <td>post-Phase-5</td><td>TS · Security</td>
+          <td>1</td><td>2</td><td>2</td>
+          <td>compareIds garbage 분류 보정, OverlayChart series memo, 환자-슬롯 cap 문서화</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>알려진 위험 / 캐리오버</h2>
+    <details open>
+      <summary>v2 / 추후 Phase에서 처리</summary>
+      <ul>
+        <li><strong>운영 자격증명 로테이션</strong> — git history에 평문 잔존 (T34 RUNBOOK 명시 예정).</li>
+        <li><strong>SessionCompare 환자-슬롯 cap</strong> — 4명까지만 메타데이터 매칭, 백엔드 <code>GET /api/v1/measurements/:id</code> 신설 필요.</li>
+        <li><strong>인증·CSP·HSTS</strong> — v2. 디바이스/앱이 무인증 의존이라 별도 토큰화 필요.</li>
+        <li><strong>TanStack Query v5 mutation signal</strong> — 패턴 검증 보류.</li>
+        <li><strong>ESLint typed-aware rules</strong> — 도입 검토 보류.</li>
+      </ul>
+    </details>
+    <details>
+      <summary>현재 검증된 가드</summary>
+      <ul>
+        <li>http.ts 에러 메시지 sanitize (상태 코드 기반 일반화, raw body는 cause에만).</li>
+        <li>Vite <code>sourcemap: 'hidden'</code> + Spring <code>server.error.*</code> 봉쇄.</li>
+        <li>URL 유래 입력(<code>:patientId</code>, <code>?ids=</code>) 정규식 clamp.</li>
+        <li>PatientRegisterForm 모든 PII 필드 <code>autoComplete="off"</code>.</li>
+        <li>Backend 컨트랙트 테스트 15건이 와이어 회귀 차단.</li>
+      </ul>
+    </details>
+  </section>
+
+  <section>
+    <h2>다음 단계</h2>
+    <ol>
+      <li><strong>Phase 6 (T29)</strong> — 인쇄 스타일 + PII 마스킹 토글.</li>
+      <li><strong>Phase 7 (T30–T33)</strong> — 백엔드 비파괴 보강 (yml, 프로파일, ControllerAdvice, CORS).</li>
+      <li><strong>Phase 8 (T34–T36)</strong> — README/RUNBOOK (HTML 포함), GitHub Actions CI, legacy static 컷오버.</li>
+      <li><strong>Final review</strong> — 출하 전 종합 감사.</li>
+    </ol>
+  </section>
+
+  <footer>
+    문서: <code>WEB_REBUILD_PLAN.md</code> · <code>IMPL_SPEC.md</code> · <code>docs/PHASE_REVIEW.md</code>.
+    이 HTML 리포트는 마일스톤마다 갱신됩니다.
+  </footer>
+</main>
+</body>
+</html>
