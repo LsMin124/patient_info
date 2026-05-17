@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
 import { useT } from '../../shared/hooks/useT'
@@ -10,7 +10,7 @@ import { Skeleton } from '../../shared/ui/Loading'
 import { usePatientsQuery } from '../patients/usePatients'
 
 import { OverlayChart, paletteColor, type OverlaySeries } from './OverlayChart'
-import { MAX_COMPARE_IDS, parseCompareIds } from './lib/compareIds'
+import { countValidIdSegments, MAX_COMPARE_IDS, parseCompareIds } from './lib/compareIds'
 import { computeSessionStats } from './lib/stats'
 import type { DataPoint, MeasurementSummary } from './schema'
 import { useDataPointsQuery, useSessionsQuery } from './useMeasurements'
@@ -36,13 +36,13 @@ export function SessionCompare() {
   const { t } = useT()
   const [params] = useSearchParams()
   const raw = params.get('ids')
-  // Count the user's intent BEFORE parsing — show "too many" even when
-  // the parser would otherwise silently truncate to MAX. The tooFew
-  // branch only triggers when the parsed set has < 2 valid entries.
-  const submittedCount = raw ? raw.split(',').filter((s) => s.trim() !== '').length : 0
+  // Count only well-formed segments; counting raw .split length would
+  // misclassify `1,abc,xyz,foo,bar` as "too many" (5 segments) when only
+  // 1 valid id exists — the user would expect "too few" instead.
+  const validSubmittedCount = countValidIdSegments(raw)
   const ids = parseCompareIds(raw)
 
-  if (submittedCount > MAX_COMPARE_IDS) {
+  if (validSubmittedCount > MAX_COMPARE_IDS) {
     return (
       <Shell title={t('session.compare.title')}>
         <EmptyState
@@ -95,12 +95,11 @@ interface CompareBodyProps {
 }
 
 function CompareBody({ ids }: CompareBodyProps) {
-  const { t } = useT()
   const patientsQuery = usePatientsQuery()
-  // Session metadata can come from any patient's session list — for compare
-  // we don't yet know which patient(s) the IDs belong to, so we read all
-  // patients and probe each list. For Phase 5 the list of patients is
-  // typically small enough that this is a no-op fetch (cache hit).
+  // We don't yet know which patient(s) the requested ids belong to. For
+  // Phase 5 the patient list is small enough to probe up to the first 4
+  // — see CompareLoader's hard cap comment. A future API revision
+  // (GET /api/v1/measurements/:id) would let us drop this scan entirely.
   const allSessionsByPatient = (patientsQuery.data ?? []).map((p) => p.patientId)
 
   return (
@@ -111,7 +110,6 @@ function CompareBody({ ids }: CompareBodyProps) {
       patientsError={patientsQuery.error}
       patientsHasData={!!patientsQuery.data}
       onRetry={() => patientsQuery.refetch()}
-      label={t('session.compare.title')}
     />
   )
 }
@@ -123,7 +121,6 @@ interface CompareLoaderProps {
   patientsError: Error | null
   patientsHasData: boolean
   onRetry: () => void
-  label: string
 }
 
 function CompareLoader({
@@ -145,11 +142,14 @@ function CompareLoader({
   const data3 = useDataPointsQuery(slots[3])
   const dataQueries = [data0, data1, data2, data3]
 
-  // Sessions metadata across all patients — query per patient. Same hook
-  // order discipline: enforce up to 4 patient slots.
-  // For correctness we just iterate the (small) patient list to find each
-  // measurementId. Since Phase 4 already keys session caches by patientId,
-  // each patient triggers at most one fetch.
+  // Sessions metadata across patients — same hook-order discipline as the
+  // data slots above. Phase 5 caps at 4 patient slots because rules-of-hooks
+  // forbids variable-length useQuery sequences; a clinic with > 4 patients
+  // will see correct chart curves but missing memo/timestamp labels for
+  // sessions owned by patient #5+.
+  //   Carry-over: Phase 6 / v2 should add `GET /api/v1/measurements/:id`
+  //   so we can fetch session metadata by measurementId directly and drop
+  //   this whole patient-scan pattern. Tracked in IMPL_SPEC §8.9 carry-over.
   const psSlots = [0, 1, 2, 3].map((i) => patientIds[i])
   const sessionsP0 = useSessionsQuery(psSlots[0])
   const sessionsP1 = useSessionsQuery(psSlots[1])
@@ -170,6 +170,41 @@ function CompareLoader({
   // when data is actually missing (no stale cache to render).
   const patientMissing = !patientsHasData && !!patientsError
   const anyDataMissing = dataQueries.slice(0, ids.length).some((q) => !q.data && q.isError)
+
+  // Build chart series + table rows up-front (memoized). useMemo must be
+  // called unconditionally — rules-of-hooks forbids hooks after the
+  // early returns below. Result is only USED in the happy-path render.
+  const data0Ref = data0.data
+  const data1Ref = data1.data
+  const data2Ref = data2.data
+  const data3Ref = data3.data
+  const sessionsKey = sessionsAll.length
+  const built = useMemo(() => {
+    const seriesOut: OverlaySeries[] = []
+    const rowsOut: Array<{
+      id: number
+      label: string
+      memo: string | null
+      peak: number | null
+      impulse: number | null
+    }> = []
+    ids.forEach((id, i) => {
+      const points = (dataQueries[i]?.data ?? []) as ReadonlyArray<DataPoint>
+      const meta = sessionsAll.find((s) => s.measurementId === id)
+      const label = meta ? `#${id} · ${meta.startTime.slice(0, 16)}` : `#${id}`
+      seriesOut.push({ id, label, points })
+      const stats = computeSessionStats(points)
+      rowsOut.push({
+        id,
+        label,
+        memo: meta?.memo ?? null,
+        peak: stats.peakN,
+        impulse: stats.impulseNs,
+      })
+    })
+    return { series: seriesOut, rows: rowsOut }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ids, data0Ref, data1Ref, data2Ref, data3Ref, sessionsKey])
 
   if (anyLoading) {
     return (
@@ -200,33 +235,9 @@ function CompareLoader({
     )
   }
 
-  // Assemble the OverlayChart series + the stats rows for the table.
-  const series: OverlaySeries[] = []
-  const rows: Array<{
-    id: number
-    label: string
-    memo: string | null
-    peak: number | null
-    impulse: number | null
-  }> = []
-  ids.forEach((id, i) => {
-    const points = (dataQueries[i]?.data ?? []) as ReadonlyArray<DataPoint>
-    const meta = sessionsAll.find((s) => s.measurementId === id)
-    const label = meta ? `#${id} · ${meta.startTime.slice(0, 16)}` : `#${id}`
-    series.push({ id, label, points })
-    const stats = computeSessionStats(points)
-    rows.push({
-      id,
-      label,
-      memo: meta?.memo ?? null,
-      peak: stats.peakN,
-      impulse: stats.impulseNs,
-    })
-  })
-
   return (
     <>
-      <OverlayChart series={series} />
+      <OverlayChart series={built.series} />
       <table className="session-compare__table" aria-label={t('session.compare.legend')}>
         <thead>
           <tr>
@@ -237,7 +248,7 @@ function CompareLoader({
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, i) => (
+          {built.rows.map((row, i) => (
             <tr key={row.id}>
               <td>
                 <span

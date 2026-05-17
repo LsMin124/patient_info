@@ -1480,3 +1480,24 @@ Phase 4 (T22~T27, 세션·차트) 머지 후 typescript-reviewer + security-revi
 - ESLint typed-aware rules — post-Phase-2 LOW에서 이월, 여전히 미반영.
 - MSW `listSessionsReturning`/`getDataPointsReturning` builder가 path param 무시 — 테스트 격리 한정 이슈로 Phase 5 compare 작업 시 같이 보강.
 - 단일 샘플 SummaryStats 케이스는 추가 완료 (단 reviewer가 지적한 `??` redundancy는 방어 코드로 유지).
+
+---
+
+## 8.9 Plan Review v5 (post-Phase-5, 2026-05-15)
+
+Phase 5 (T28, SessionCompare) 머지 후 typescript + security 병렬 감사. backend 변경 0이라 java-reviewer 생략.
+
+### 8.9.1 적용된 fix
+
+| Severity | 영역 | 내용 |
+|---|---|---|
+| HIGH | session metadata | CompareLoader의 4-슬롯 useSessionsQuery 패턴이 환자 #5+ 소유 세션의 메타데이터를 silently drop — 카운터 부재 시 fallback이 `#id`로 떨어지는 점을 명시적 주석으로 박제 (실 fix는 backend `GET /api/v1/measurements/:id` 도입 필요, §8.9.2 carry-over) |
+| MEDIUM | parser | 새 `countValidIdSegments()`로 `1,abc,xyz,foo,bar` 같은 garbage-heavy 입력에서 too-many 오분류 차단 |
+| MEDIUM | render churn | `series` 배열 빌더를 useMemo로 이동 (early-return 위로 옮겨 rules-of-hooks 만족) — OverlayChart prop identity 안정화 |
+| LOW | dead prop | CompareLoader의 미사용 `label` prop 제거 |
+| LOW | DoS hardening | `compareIds.ts` 파서가 `split(',').slice(0, MAX*4)`로 segment 수 상한 |
+
+### 8.9.2 Carry-over (다음 phase로 전달)
+
+- **Backend `GET /api/v1/measurements/:id` 신설 (v2)** — SessionCompare가 환자 목록을 스캔하지 않고 직접 메타데이터를 조회할 수 있도록. Phase 5의 4-환자 cap을 제거하는 유일한 정공법.
+- 이전 carry-over (TanStack Query mutation signal, ESLint typed-aware rules)는 그대로 이월.
