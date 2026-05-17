@@ -1,0 +1,9 @@
+.force-chart {
+  position: relative;
+  width: 100%;
+  height: clamp(20rem, 50vh, 32rem);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+}
