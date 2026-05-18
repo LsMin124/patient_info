@@ -1501,3 +1501,33 @@ Phase 5 (T28, SessionCompare) 머지 후 typescript + security 병렬 감사. ba
 
 - **Backend `GET /api/v1/measurements/:id` 신설 (v2)** — SessionCompare가 환자 목록을 스캔하지 않고 직접 메타데이터를 조회할 수 있도록. Phase 5의 4-환자 cap을 제거하는 유일한 정공법.
 - 이전 carry-over (TanStack Query mutation signal, ESLint typed-aware rules)는 그대로 이월.
+
+---
+
+## 8.10 Plan Review v6 (post-Phase-6, 2026-05-18)
+
+Phase 6 (T29 — print stylesheet + PII 마스킹 토글) 머지 후 typescript + security 병렬 감사. backend 변경 0이라 java-reviewer 생략.
+
+### 8.10.1 적용된 fix
+
+| Severity | 영역 | 내용 |
+|---|---|---|
+| HIGH | PiiMaskProvider | `setEnabled`/`toggle`의 localStorage write 실패 시 state-storage 불일치 — state 먼저 갱신 후 storage write, dev-only `console.warn` 으로 사일런트 실패 가시화 |
+| HIGH | maskName | UTF-16 code-unit length 사용 → supplementary plane(이모지 등) 문자에서 dot 개수 오류; `Array.from()`+grapheme-aware indexing 으로 교정 |
+| HIGH | print.css | `ErrorFallback` 의 retry `<button>` 이 `.btn` 클래스 없음 → 인쇄 시 노출; `[role="alert"] button` 추가로 차단. `@page { margin: 1.5cm }` 명시 |
+| HIGH | http.ts | schema-failure `ApiError.message` 가 path를 inline(`Response failed schema validation for GET /api/v1/patients/p001/...`) → ErrorFallback/스크린샷에서 PII 유출; generic 422 메시지로 통일, path는 `cause` only |
+| MEDIUM | maskName | NFC normalize + zero-width(ZWSP/ZWJ/RTL marks/BOM) strip — "보이지 않는 첫 글자"가 visible-first 위치 점유하는 회피 패턴 차단 |
+| MEDIUM | schema | `CreatePatientSchema.name` 에 NFC normalize + zero-width strip + min(1) — whitespace-only/invisible-only 입력이 빈 카드로 렌더되는 회피 차단 |
+| MEDIUM | i18n | PatientList/PatientDetail의 잔존 하드코드 한글(이전/다음, 정렬옵션, 검색 placeholder, "환자를 찾을 수 없습니다" 등) → `settings.*` 추가하던 흐름에 맞춰 `patient.list.*` 9개 키 신설 |
+| MEDIUM | a11y | SettingsPage의 `role="radiogroup"` + `<button aria-pressed>` 조합은 ARIA 위반 (`radiogroup` 은 `role="radio"` 자식 필요) → `role="group"` 으로 수정 |
+| MEDIUM | tests | "마스킹 켜졌을 때 DOM이 실제로 마스킹된다" integration 테스트가 없어 mask 분기 회귀가 무감지될 수 있었음 — PatientList에 1건 추가 |
+| LOW | docs | `providers.tsx` JSDoc이 Phase-2 provider 순서를 그대로 둠 → Phase-6 순서(ErrorBoundary > QueryClient > Theme > Locale > PiiMask > Toast) 로 갱신 |
+| LOW | UX | piiMaskHint 에 "브라우저 인쇄 옵션의 머리글/바닥글 OFF" 안내 추가 — `@page` CSS로 URL header를 막을 수 없는 브라우저 한계를 운영자에게 가시화 |
+| LOW | tests | storage 이벤트 `newValue === null` (다른 탭의 removeItem) 케이스 명시 테스트 추가 |
+
+### 8.10.2 Carry-over (Phase 7로 전달)
+
+- **DB credentials in `application.properties` 의 fallback literal `smartbiomed`** — Phase 7 T30 작업 범위. 본 리뷰 사이클에서는 코드 변경 없이 §8.10 carry-over에 박제. 배포 전 반드시 (a) inline default 제거 + 시작시 env 검증 throw, (b) 자격증명 로테이션.
+- **`SessionList` 링크 href 의 raw `patientId`** — 라우팅에 필수라 렌더는 보존. 브라우저 인쇄 시 URL header에 등장하는 점은 piiMaskHint로 운영자에게 안내. 추가 완화는 운영 LAN trust 모델에 위임.
+- **MEDIUM의 SessionList/SessionCompare 잔존 하드코드 한글(Phase 5 이전부터)** — 본 사이클에서는 PatientList/Detail만 정리. SessionList 의 "선택한 N개 비교" 등은 Phase 8 polish 시 묶어서.
+- 이전 carry-over (TanStack Query mutation signal, ESLint typed-aware rules, backend `GET /api/v1/measurements/:id`) 모두 그대로 이월.

@@ -1,3 +1,11 @@
+/* Explicit page geometry. Browsers still inject URL/date headers by default
+   from the print dialog — operators printing PII-masked output must turn
+   "Headers and footers" OFF in their browser's print options. This is
+   documented in the Settings page hint and in the runbook. */
+@page {
+  margin: 1.5cm;
+}
+
 @media print {
   :root {
     color-scheme: light;
@@ -30,6 +38,10 @@
   .patient-register-form,
   .modal-backdrop,
   .btn,
+  /* ErrorFallback renders a bare <button>, no .btn class. Match it via the
+     enclosing role="alert" so a printed page that lands on an error state
+     doesn't carry an actionable retry button. */
+  [role="alert"] button,
   .session-detail__header .btn {
     display: none !important;
   }
