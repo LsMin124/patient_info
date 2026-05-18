@@ -7,6 +7,7 @@ import org.springframework.http.MediaType;
 
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -107,10 +108,34 @@ class PatientApiContractTest extends ApiContractTestBase {
                 .getResponse()
                 .getContentAsString();
         // No "Invalid patient Id: ..." message leak — the request param must
-        // not appear anywhere in the response body.
-        if (resp.contains("unknown_patient_xyz")) {
-            throw new AssertionError(
-                    "Sanitized envelope must not include the request path id; got: " + resp);
-        }
+        // not appear anywhere in the response body, and no Spring-default
+        // `message` / `path` field must surface either.
+        assertThat(resp)
+                .doesNotContain("unknown_patient_xyz")
+                .doesNotContain("Invalid patient Id")
+                .doesNotContain("\"message\"")
+                .doesNotContain("\"path\"");
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/measurements/{id}/data with malformed body returns 400 sanitized envelope")
+    void saveDataPoints_malformedPayload_returns400Sanitized() throws Exception {
+        var patient = seedPatient("p001", "테스트환자A");
+        var measurement = seedMeasurement(patient, "marker");
+
+        // Attacker token in the JSON body — must not echo back in either
+        // the message or any default-shape field.
+        String malformed = "[{\"time_offset_ms\": \"DROP_TABLE_marker_xyz\", \"kg_value\": 1.0}]";
+        String resp = mockMvc.perform(post("/api/v1/measurements/" + measurement.getId() + "/data")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(malformed))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").doesNotExist())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        assertThat(resp).doesNotContain("DROP_TABLE_marker_xyz");
     }
 }

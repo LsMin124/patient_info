@@ -56,15 +56,29 @@ public class MeasurementService {
 
         List<DataPoint> dataPoints = dataList.stream()
                 .map(data -> {
+                    if (data == null) {
+                        // A null entry in the JSON array (`[{...}, null, {...}]`)
+                        // would otherwise NPE inside the map below and fall
+                        // through to the 500 fallback handler. Surface as 400.
+                        throw new IllegalArgumentException(
+                                "Invalid data point payload: array contains null entry");
+                    }
                     // Jackson deserializes JSON integers as Long when the value
                     // exceeds Integer.MAX_VALUE; the bare (Integer) cast would
-                    // throw ClassCastException for long sessions. Use Number so
-                    // both Integer and Long are accepted without losing intent.
-                    Number timeOffset = (Number) data.get("time_offset_ms");
-                    Number kgValue = (Number) data.get("kg_value");
-                    if (timeOffset == null || kgValue == null) {
+                    // throw ClassCastException for long sessions. Accept any
+                    // Number so Integer/Long/Double all coerce safely. A
+                    // non-numeric value (e.g. JSON string) would otherwise
+                    // throw ClassCastException → 500; reject it as 400 here.
+                    Object rawTime = data.get("time_offset_ms");
+                    Object rawKg = data.get("kg_value");
+                    if (rawTime == null || rawKg == null) {
                         throw new IllegalArgumentException(
                                 "Invalid data point payload: time_offset_ms and kg_value are required");
+                    }
+                    if (!(rawTime instanceof Number timeOffset)
+                            || !(rawKg instanceof Number kgValue)) {
+                        throw new IllegalArgumentException(
+                                "Invalid data point payload: time_offset_ms and kg_value must be numeric");
                     }
                     return new DataPoint(measurement, timeOffset.intValue(), kgValue.doubleValue());
                 })

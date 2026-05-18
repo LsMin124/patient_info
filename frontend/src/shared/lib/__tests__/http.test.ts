@@ -69,6 +69,10 @@ describe('httpGet', () => {
   it('throws ApiError carrying server status on non-2xx', async () => {
     // Server attempts to leak a patient identifier in the error body; ApiError
     // must use a generic message and quarantine the detail on `cause` only.
+    // (Models the pre-Phase-7 leaky body — kept as a regression guard so a
+    // future regression that disabled the message-sanitization layer would
+    // still be caught here, even if the live backend now returns a
+    // structured envelope per the test below.)
     fetchMock.mockResolvedValueOnce(jsonResponse({ error: 'Invalid patient Id: p001' }, 404))
     const err = await httpGet('/api/v1/missing', okSchema).catch((e) => e)
     expect(err).toBeInstanceOf(ApiError)
@@ -76,6 +80,25 @@ describe('httpGet', () => {
     expect(err.message).toBe('요청한 리소스를 찾을 수 없습니다.')
     expect(err.message).not.toContain('p001')
     expect(err.cause).toEqual({ error: 'Invalid patient Id: p001' })
+  })
+
+  it('quarantines the new sanitized {status,error,timestamp} envelope on cause', async () => {
+    // Mirrors the Phase 7 backend GlobalExceptionHandler envelope shape.
+    // Documents the live-server cause shape so any frontend code that
+    // accidentally narrows `cause` to the old `{ error: string }` form
+    // will surface as a test failure here rather than in a clinic.
+    const serverEnvelope = {
+      status: 404,
+      error: 'Not Found',
+      timestamp: '2026-05-18T13:59:25.967Z',
+    }
+    fetchMock.mockResolvedValueOnce(jsonResponse(serverEnvelope, 404))
+    const err = await httpGet('/api/v1/patients/p001/measurements', okSchema).catch((e) => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err.status).toBe(404)
+    expect(err.message).toBe('요청한 리소스를 찾을 수 없습니다.')
+    expect(err.message).not.toContain('p001')
+    expect(err.cause).toEqual(serverEnvelope)
   })
 
   it('uses status-keyed generic message when error body is unparseable', async () => {

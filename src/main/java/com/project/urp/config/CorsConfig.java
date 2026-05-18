@@ -25,7 +25,9 @@ public class CorsConfig implements WebMvcConfigurer {
         // Split + trim. Empty / whitespace-only entries are dropped so a
         // bare property value (the production default) yields no origins
         // instead of a single empty string that would match nothing.
-        this.allowedOrigins = origins == null || origins.isBlank()
+        // `origins` is never null in practice (Spring injects "" for the
+        // empty default), so we only branch on isBlank.
+        this.allowedOrigins = origins.isBlank()
                 ? new String[0]
                 : java.util.Arrays.stream(origins.split(","))
                         .map(String::trim)
