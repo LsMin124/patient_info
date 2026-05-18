@@ -66,8 +66,8 @@ class PatientApiContractTest extends ApiContractTestBase {
     }
 
     @Test
-    @DisplayName("POST /api/v1/patients with duplicate patientId rejects (no 2xx success)")
-    void createPatient_duplicatePatientId_doesNotSucceed() throws Exception {
+    @DisplayName("POST /api/v1/patients with duplicate patientId returns 400 via GlobalExceptionHandler")
+    void createPatient_duplicatePatientId_returns400() throws Exception {
         Map<String, Object> body = Map.of(
                 "patientId", "p001",
                 "name", "first",
@@ -81,22 +81,36 @@ class PatientApiContractTest extends ApiContractTestBase {
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isCreated());
 
-        try {
-            int statusCode = mockMvc.perform(post("/api/v1/patients")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(body)))
-                    .andReturn()
-                    .getResponse()
-                    .getStatus();
-            if (statusCode / 100 == 2) {
-                throw new AssertionError("Duplicate patientId must not return 2xx (got " + statusCode + ")");
-            }
-        } catch (jakarta.servlet.ServletException expected) {
-            Throwable cause = expected.getCause();
-            if (!(cause instanceof IllegalArgumentException)) {
-                throw new AssertionError(
-                        "Expected IllegalArgumentException cause for duplicate, got: " + cause);
-            }
+        // GlobalExceptionHandler (Phase 7 T31) converts the service-layer
+        // IllegalArgumentException into a 400 with the sanitized envelope.
+        // The exception message ("Patient ID already exists: p001") must NOT
+        // appear in the body — the envelope carries only status / error /
+        // timestamp.
+        mockMvc.perform(post("/api/v1/patients")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").doesNotExist())
+                .andExpect(jsonPath("$.timestamp").isString());
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/patients/{unknown}/measurements returns 404 sanitized envelope")
+    void measurementsByPatient_unknownId_returns404Sanitized() throws Exception {
+        String resp = mockMvc.perform(get("/api/v1/patients/unknown_patient_xyz/measurements"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        // No "Invalid patient Id: ..." message leak — the request param must
+        // not appear anywhere in the response body.
+        if (resp.contains("unknown_patient_xyz")) {
+            throw new AssertionError(
+                    "Sanitized envelope must not include the request path id; got: " + resp);
         }
     }
 }
