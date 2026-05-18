@@ -1165,7 +1165,7 @@ Phase 2  [ ] T08  [ ] T09  [ ] T10  [ ] T11  [ ] T12  [ ] T13  [ ] T14  [ ] T15 
 Phase 3  [ ] T18  [ ] T19  [ ] T20  [ ] T21
 Phase 4  [ ] T22  [ ] T23  [ ] T24  [ ] T25  [ ] T26  [ ] T27
 Phase 5  [ ] T28
-Phase 6  [ ] T29
+Phase 6  [x] T29
 Phase 7  [ ] T30  [ ] T31  [ ] T32  [ ] T33
 Phase 8  [ ] T34  [ ] T35  [ ] T36
 ```
