@@ -58,18 +58,18 @@ export function PatientList() {
               setSearch(e.target.value)
               setPage(1)
             }}
-            placeholder="p001 / 이름"
+            placeholder={t('patient.list.searchPlaceholder')}
           />
           <Select
-            label={t('patient.register.title').replace(' 등록', '')}
+            label={t('patient.list.sort')}
             value={sortKey}
             onChange={(e) => {
               setSortKey(e.target.value as SortKey)
               setPage(1)
             }}
           >
-            <option value="registered">최신 등록순</option>
-            <option value="name">이름순</option>
+            <option value="registered">{t('patient.list.sortRegistered')}</option>
+            <option value="name">{t('patient.list.sortName')}</option>
           </Select>
           <div className="patient-list__action">
             <Button onClick={() => setRegisterOpen(true)} aria-haspopup="dialog">
@@ -133,12 +133,7 @@ function PatientListBody({ isLoading, isError, error, onRetry, view, onPrev, onN
     return <ErrorFallback error={error} onReset={onRetry} title={t('common.error')} />
   }
   if (view.totalCount === 0) {
-    return (
-      <EmptyState
-        title={t('patient.list.empty')}
-        description="신규 환자 등록 버튼으로 추가하세요."
-      />
-    )
+    return <EmptyState title={t('patient.list.empty')} description={t('patient.list.emptyHint')} />
   }
   return (
     <>
@@ -168,13 +163,13 @@ function PatientListBody({ isLoading, isError, error, onRetry, view, onPrev, onN
       </table>
       <nav className="patient-list__pager" aria-label="pagination">
         <Button variant="secondary" onClick={onPrev} disabled={view.page === 1}>
-          이전
+          {t('patient.list.prev')}
         </Button>
         <span aria-live="polite">
-          {view.page} / {view.totalPages} ({view.totalCount}명)
+          {view.page} / {view.totalPages} ({view.totalCount} {t('patient.list.pagerStatus')})
         </span>
         <Button variant="secondary" onClick={onNext} disabled={view.page === view.totalPages}>
-          다음
+          {t('patient.list.next')}
         </Button>
       </nav>
     </>

@@ -101,6 +101,21 @@ describe('PiiMaskProvider', () => {
     expect(screen.getByTestId('state').textContent).toBe('off')
   })
 
+  it('treats a null newValue (key deleted in another tab) as off', () => {
+    window.localStorage.setItem(STORAGE_KEY, '1')
+    render(
+      <PiiMaskProvider>
+        <Display />
+      </PiiMaskProvider>,
+    )
+    expect(screen.getByTestId('state').textContent).toBe('on')
+    act(() => {
+      // localStorage.removeItem(STORAGE_KEY) in another tab fires this event.
+      window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY, newValue: null }))
+    })
+    expect(screen.getByTestId('state').textContent).toBe('off')
+  })
+
   it('ignores storage events for unrelated keys', () => {
     window.localStorage.setItem(STORAGE_KEY, '1')
     render(

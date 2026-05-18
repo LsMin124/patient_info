@@ -26,8 +26,19 @@ export interface Translations {
     list: {
       title: string
       empty: string
+      emptyHint: string
       search: string
+      searchPlaceholder: string
       register: string
+      sort: string
+      sortRegistered: string
+      sortName: string
+      prev: string
+      next: string
+      pagerStatus: string
+      notFound: string
+      notFoundHint: string
+      invalidId: string
     }
     register: {
       title: string

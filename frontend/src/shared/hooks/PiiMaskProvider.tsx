@@ -34,13 +34,20 @@ function readStored(): boolean {
 export function PiiMaskProvider({ children }: { children: ReactNode }) {
   const [enabled, setEnabledState] = useState<boolean>(readStored)
 
+  // State is updated first so the UI always reflects the user's intent even
+  // if persistence fails (quota, private-browsing block). The localStorage
+  // write surfaces a console.warn so a silent persistence regression is at
+  // least observable in dev — this is a clinical tool, the operator should
+  // know when "remember my setting" stops working.
   const setEnabled = useCallback((next: boolean) => {
+    setEnabledState(next)
     try {
       window.localStorage.setItem(STORAGE_KEY, next ? '1' : '0')
-    } catch {
-      // ignore
+    } catch (err) {
+      if (import.meta.env.DEV) {
+        console.warn('[PiiMask] localStorage.setItem failed', err)
+      }
     }
-    setEnabledState(next)
   }, [])
 
   const toggle = useCallback(() => {
@@ -48,8 +55,10 @@ export function PiiMaskProvider({ children }: { children: ReactNode }) {
       const next = !v
       try {
         window.localStorage.setItem(STORAGE_KEY, next ? '1' : '0')
-      } catch {
-        // ignore
+      } catch (err) {
+        if (import.meta.env.DEV) {
+          console.warn('[PiiMask] localStorage.setItem failed', err)
+        }
       }
       return next
     })

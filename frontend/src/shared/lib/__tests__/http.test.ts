@@ -51,6 +51,21 @@ describe('httpGet', () => {
     })
   })
 
+  it('schema-failure ApiError message does not leak the request path (PII guard)', async () => {
+    // Path segments in this app contain raw patientIds; a schema-failure
+    // message that inlined the path would defeat the PII masking toggle for
+    // any error that lands in ErrorFallback.
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: 'yes' }))
+    const err = await httpGet('/api/v1/patients/p001/measurements', okSchema).catch((e) => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err.status).toBe(422)
+    expect(err.message).toBe('입력값을 확인해 주세요.')
+    expect(err.message).not.toContain('p001')
+    expect(err.message).not.toContain('/api/v1')
+    // Path is still preserved on `cause` for debugging.
+    expect(err.cause).toMatchObject({ method: 'GET', path: '/api/v1/patients/p001/measurements' })
+  })
+
   it('throws ApiError carrying server status on non-2xx', async () => {
     // Server attempts to leak a patient identifier in the error body; ApiError
     // must use a generic message and quarantine the detail on `cause` only.

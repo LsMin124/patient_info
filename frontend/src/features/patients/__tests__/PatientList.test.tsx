@@ -107,4 +107,26 @@ describe('PatientList', () => {
     expect(await screen.findByText(/2 \/ 2/)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'p001' })).toBeInTheDocument()
   })
+
+  it('masks patient name and ID when PII mask is enabled', async () => {
+    // Pre-seed localStorage so PiiMaskProvider hydrates to enabled=true.
+    window.localStorage.setItem('patientinfo:pii-mask', '1')
+    try {
+      render(<PatientList />, { wrapper: makeWrapper() })
+      // Both seedPatients have 4-char IDs ('p001', 'p002') that mask to the
+      // same 'p---', so two links share the accessible name when masking is
+      // on. The right assertion is "≥1 masked link exists AND no raw ID
+      // leaks AND no raw name leaks".
+      const maskedLinks = await screen.findAllByRole('link', { name: 'p---' })
+      expect(maskedLinks.length).toBeGreaterThanOrEqual(2)
+      expect(screen.queryByRole('link', { name: 'p001' })).toBeNull()
+      expect(screen.queryByRole('link', { name: 'p002' })).toBeNull()
+      // '테스트환자A' and '테스트환자B' both mask to '테·····' (5 dots).
+      expect(screen.queryAllByText('테·····').length).toBeGreaterThanOrEqual(1)
+      expect(screen.queryByText('테스트환자A')).toBeNull()
+      expect(screen.queryByText('테스트환자B')).toBeNull()
+    } finally {
+      window.localStorage.removeItem('patientinfo:pii-mask')
+    }
+  })
 })

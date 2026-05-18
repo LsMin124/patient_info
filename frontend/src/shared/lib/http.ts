@@ -117,11 +117,16 @@ async function request<TSchema extends ZodTypeAny>(
 
   const parsed = schema.safeParse(json)
   if (!parsed.success) {
-    throw new ApiError(
-      `Response failed schema validation for ${method} ${path}`,
-      PARSE_STATUS,
-      parsed.error,
-    )
+    // Do NOT inline the URL path into the user-visible message — paths in this
+    // app contain raw patientIds (/api/v1/patients/:patientId/...). The PII
+    // masking toggle would be defeated if a failed schema parse rendered the
+    // path in an ErrorFallback that the operator might screenshot or print.
+    // Method + path are preserved on `cause` for debugging only.
+    throw new ApiError(genericMessageForStatus(PARSE_STATUS), PARSE_STATUS, {
+      method,
+      path,
+      zod: parsed.error,
+    })
   }
   return parsed.data as z.infer<TSchema>
 }

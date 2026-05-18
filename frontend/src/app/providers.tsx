@@ -15,17 +15,16 @@ interface ProvidersProps {
 
 /**
  * Global provider stack (outer → inner):
- *   ErrorBoundary  — outermost so any provider failure is caught
- *   QueryClient    — server cache; lives for the app's lifetime
- *   ThemeProvider  — single theme state (applies <html data-theme=...>)
- *   LocaleProvider — single locale state (re-renders all useT consumers)
- *   ToastProvider  — innermost so any child component can dispatch toasts
+ *   ErrorBoundary       — outermost so any provider failure is caught
+ *   QueryClientProvider — server cache; lives for the app's lifetime
+ *   ThemeProvider       — single theme state (applies <html data-theme=...>)
+ *   LocaleProvider      — single locale state (re-renders all useT consumers)
+ *   PiiMaskProvider     — patient-PII masking toggle (Phase 6)
+ *   ToastProvider       — innermost so any child component can dispatch toasts
  *
- * ThemeProvider and LocaleProvider replace the earlier ThemeBridge / per-hook
- * state pattern. Lifting state into Context fixes the cross-component sync
- * bug surfaced in the post-Phase-2 review (changing locale or theme in one
- * component now propagates to every consumer in the same tab, not just the
- * caller).
+ * Theme/Locale/PiiMask each persist to localStorage and sync across tabs
+ * via the 'storage' event. Lifting state into Context fixes the
+ * cross-component desync surfaced in the post-Phase-2 review.
  */
 export function Providers({ children }: ProvidersProps) {
   const [queryClient] = useState(

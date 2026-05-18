@@ -39,6 +39,13 @@ export const PatientListSchema = z.array(PatientSchema)
  * does not reject unfamiliar real-world IDs while still blocking obvious
  * garbage. Backend remains source of truth.
  */
+// Strip Unicode formatting/control characters (ZWJ, ZWSP, RTL marks, BOM)
+// before length validation so a "filled" name made of invisible glyphs cannot
+// pass the .min(1) check and render as a blank patient card. Mirrors the
+// defense in `shared/lib/maskPii.ts`. Constructed from a string source so the
+// file carries no literal invisible characters (no-irregular-whitespace).
+const ZW = new RegExp('[\\u200B-\\u200F\\u202A-\\u202E\\u2060-\\u2064\\uFEFF]', 'g')
+
 export const CreatePatientSchema = z
   .object({
     patientId: z
@@ -46,7 +53,11 @@ export const CreatePatientSchema = z
       .min(1)
       .max(32)
       .regex(/^[A-Za-z0-9_-]+$/, 'patientId may contain letters, digits, "_" and "-" only'),
-    name: z.string().min(1).max(50),
+    name: z
+      .string()
+      .max(50)
+      .transform((s) => s.normalize('NFC').replace(ZW, '').trim())
+      .pipe(z.string().min(1, 'name must not be blank')),
     age: z.number().int().min(0).max(150),
     sex: z.enum(['male', 'female', 'other']),
     height: z.number().min(50).max(250),

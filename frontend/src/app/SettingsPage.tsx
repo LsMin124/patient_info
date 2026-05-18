@@ -59,7 +59,7 @@ function ThemeControl() {
     { key: 'dark', label: t('settings.themeDark') },
   ]
   return (
-    <div role="radiogroup" aria-label={t('settings.theme')}>
+    <div role="group" aria-label={t('settings.theme')}>
       {options.map((o) => (
         <Button
           key={o.key}
@@ -83,7 +83,7 @@ function LocaleControl() {
     { key: 'en', label: t('settings.localeEn') },
   ]
   return (
-    <div role="radiogroup" aria-label={t('settings.locale')}>
+    <div role="group" aria-label={t('settings.locale')}>
       {options.map((o) => (
         <Button
           key={o.key}

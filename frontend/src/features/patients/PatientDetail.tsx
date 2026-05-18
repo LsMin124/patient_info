@@ -61,11 +61,11 @@ export function PatientDetail() {
     return (
       <section className="patient-detail">
         <EmptyState
-          title="환자를 찾을 수 없습니다"
+          title={t('patient.list.notFound')}
           description={
             safePatientId
-              ? `'${safePatientId}' 에 해당하는 환자가 없습니다.`
-              : '잘못된 환자 ID 형식입니다.'
+              ? `'${safePatientId}' ${t('patient.list.notFoundHint')}`
+              : t('patient.list.invalidId')
           }
           action={
             <Link to="/patients">
