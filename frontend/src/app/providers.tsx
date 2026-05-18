@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
 
+import { PiiMaskProvider } from '../shared/hooks/PiiMaskProvider'
 import { ThemeProvider } from '../shared/hooks/ThemeProvider'
 import { useT } from '../shared/hooks/useT'
 import { LocaleProvider } from '../shared/i18n/LocaleProvider'
@@ -48,7 +49,9 @@ export function Providers({ children }: ProvidersProps) {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <LocaleProvider>
-            <LocalizedToastProvider>{children}</LocalizedToastProvider>
+            <PiiMaskProvider>
+              <LocalizedToastProvider>{children}</LocalizedToastProvider>
+            </PiiMaskProvider>
           </LocaleProvider>
         </ThemeProvider>
       </QueryClientProvider>

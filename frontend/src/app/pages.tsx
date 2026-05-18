@@ -8,6 +8,8 @@ import { useT } from '../shared/hooks/useT'
 import { Button } from '../shared/ui/Button'
 import { EmptyState } from '../shared/ui/EmptyState'
 
+import { SettingsPage as SettingsPageImpl } from './SettingsPage'
+
 /**
  * Phase 2 placeholders. Real implementations land in Phase 3 (T19–T21:
  * patients) and Phase 4–5 (T22–T28: sessions). Each placeholder renders an
@@ -45,13 +47,7 @@ export function SessionComparePage() {
 }
 
 export function SettingsPage() {
-  const { t } = useT()
-  return (
-    <div>
-      <h1>{t('nav.settings')}</h1>
-      <EmptyState title="준비 중" description="언어·테마 토글이 추가됩니다." />
-    </div>
-  )
+  return <SettingsPageImpl />
 }
 
 export function NotFoundPage() {

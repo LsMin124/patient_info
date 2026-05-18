@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
+import { usePiiMask } from '../../shared/hooks/PiiMaskProvider'
 import { useT } from '../../shared/hooks/useT'
+import { maskName, maskPatientId } from '../../shared/lib/maskPii'
 import { Button } from '../../shared/ui/Button'
 import { EmptyState } from '../../shared/ui/EmptyState'
 import { ErrorFallback } from '../../shared/ui/ErrorFallback'
@@ -31,6 +33,7 @@ import './session-detail.css'
  */
 export function SessionDetail() {
   const { t } = useT()
+  const { enabled: maskEnabled } = usePiiMask()
   const params = useParams<{ patientId: string; measurementId: string }>()
   const patientId =
     params.patientId && /^[A-Za-z0-9_-]{1,32}$/.test(params.patientId) ? params.patientId : null
@@ -99,7 +102,10 @@ export function SessionDetail() {
       <header className="session-detail__header">
         <div>
           <h1>
-            {patient.name} <span className="session-detail__patient-id">({patient.patientId})</span>
+            {maskEnabled ? maskName(patient.name) : patient.name}{' '}
+            <span className="session-detail__patient-id">
+              ({maskEnabled ? maskPatientId(patient.patientId) : patient.patientId})
+            </span>
           </h1>
           <p className="session-detail__meta">
             {session.memo ?? t('session.list.noMemo')} · {session.startTime}

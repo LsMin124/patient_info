@@ -94,4 +94,17 @@ export interface Translations {
     description: string
     home: string
   }
+  settings: {
+    title: string
+    theme: string
+    themeLight: string
+    themeDark: string
+    locale: string
+    localeKo: string
+    localeEn: string
+    piiMask: string
+    piiMaskHint: string
+    piiMaskOn: string
+    piiMaskOff: string
+  }
 }

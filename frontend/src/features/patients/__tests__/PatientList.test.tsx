@@ -6,6 +6,7 @@ import type { ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 
+import { PiiMaskProvider } from '../../../shared/hooks/PiiMaskProvider'
 import { LocaleProvider } from '../../../shared/i18n/LocaleProvider'
 import { ToastProvider } from '../../../shared/ui/Toast'
 import { server } from '../../../test/setup'
@@ -23,9 +24,11 @@ function makeWrapper() {
     return (
       <QueryClientProvider client={client}>
         <LocaleProvider>
-          <ToastProvider>
-            <MemoryRouter>{children}</MemoryRouter>
-          </ToastProvider>
+          <PiiMaskProvider>
+            <ToastProvider>
+              <MemoryRouter>{children}</MemoryRouter>
+            </ToastProvider>
+          </PiiMaskProvider>
         </LocaleProvider>
       </QueryClientProvider>
     )

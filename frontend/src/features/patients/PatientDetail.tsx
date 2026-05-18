@@ -1,6 +1,8 @@
 import { Link, useParams } from 'react-router-dom'
 
+import { usePiiMask } from '../../shared/hooks/PiiMaskProvider'
 import { useT } from '../../shared/hooks/useT'
+import { maskName, maskPatientId } from '../../shared/lib/maskPii'
 import { Button } from '../../shared/ui/Button'
 import { EmptyState } from '../../shared/ui/EmptyState'
 import { ErrorFallback } from '../../shared/ui/ErrorFallback'
@@ -24,6 +26,7 @@ export function PatientDetail() {
   const { t } = useT()
   const { patientId } = useParams<{ patientId: string }>()
   const query = usePatientsQuery()
+  const { enabled: maskEnabled } = usePiiMask()
 
   if (query.isLoading) {
     return (
@@ -77,8 +80,10 @@ export function PatientDetail() {
   return (
     <section className="patient-detail">
       <header className="patient-detail__header">
-        <h1>{patient.name}</h1>
-        <span className="patient-detail__id">{patient.patientId}</span>
+        <h1>{maskEnabled ? maskName(patient.name) : patient.name}</h1>
+        <span className="patient-detail__id">
+          {maskEnabled ? maskPatientId(patient.patientId) : patient.patientId}
+        </span>
       </header>
 
       <dl className="patient-detail__card">

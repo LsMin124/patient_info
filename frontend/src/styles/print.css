@@ -1,0 +1,74 @@
+@media print {
+  :root {
+    color-scheme: light;
+    --color-bg: #fff;
+    --color-surface: #fff;
+    --color-surface-raised: #f7f7f7;
+    --color-fg: #000;
+    --color-fg-muted: #333;
+    --color-border: #999;
+    --color-accent: #000;
+    --shadow-sm: none;
+    --shadow-md: none;
+    --shadow-lg: none;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Hide chrome — header navigation, register/CSV/compare buttons,
+     skip-link, toasts. Pages render their content only. */
+  .app-shell__header,
+  .app-shell__footer,
+  .skip-link,
+  .toast-region,
+  .patient-list__controls,
+  .patient-list__pager,
+  .session-list__compare,
+  .patient-register-form,
+  .modal-backdrop,
+  .btn,
+  .session-detail__header .btn {
+    display: none !important;
+  }
+
+  /* Hide form-row input/select rendering — registration is web-only. */
+  .field input,
+  .field select {
+    border: 1px solid #999 !important;
+    background: #fff !important;
+  }
+
+  /* The main content scroll-fits a printed page. */
+  .app-shell__main {
+    padding: 0;
+  }
+
+  /* Avoid orphan headings before page breaks. */
+  h1,
+  h2,
+  h3 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* Charts: keep visible but compact; chart.js draws into a canvas
+     which prints as a raster — fine for one-page reports. */
+  .force-chart {
+    box-shadow: none;
+    border: 1px solid #999;
+  }
+
+  /* Page break between large blocks. */
+  .session-detail > .force-chart {
+    page-break-after: avoid;
+  }
+  .session-detail > section {
+    page-break-inside: avoid;
+  }
+  table {
+    page-break-inside: avoid;
+  }
+}

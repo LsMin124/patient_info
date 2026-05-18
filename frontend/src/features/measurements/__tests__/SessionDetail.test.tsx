@@ -6,6 +6,7 @@ import type { ReactNode } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { PiiMaskProvider } from '../../../shared/hooks/PiiMaskProvider'
 import { LocaleProvider } from '../../../shared/i18n/LocaleProvider'
 import { ToastProvider } from '../../../shared/ui/Toast'
 import { server } from '../../../test/setup'
@@ -25,15 +26,17 @@ function renderAt(patientId: string, measurementId: string) {
     return (
       <QueryClientProvider client={client}>
         <LocaleProvider>
-          <ToastProvider>
-            <MemoryRouter initialEntries={[`/patients/${patientId}/sessions/${measurementId}`]}>
-              <Routes>
-                <Route path="/patients/:patientId/sessions/:measurementId" element={children} />
-                <Route path="/patients/:patientId" element={<div>patient-detail</div>} />
-                <Route path="/patients" element={<div>patient-list</div>} />
-              </Routes>
-            </MemoryRouter>
-          </ToastProvider>
+          <PiiMaskProvider>
+            <ToastProvider>
+              <MemoryRouter initialEntries={[`/patients/${patientId}/sessions/${measurementId}`]}>
+                <Routes>
+                  <Route path="/patients/:patientId/sessions/:measurementId" element={children} />
+                  <Route path="/patients/:patientId" element={<div>patient-detail</div>} />
+                  <Route path="/patients" element={<div>patient-list</div>} />
+                </Routes>
+              </MemoryRouter>
+            </ToastProvider>
+          </PiiMaskProvider>
         </LocaleProvider>
       </QueryClientProvider>
     )
