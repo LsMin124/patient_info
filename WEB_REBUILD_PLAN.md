@@ -23,7 +23,7 @@
 |---|---|
 | 런타임 | Java 17, Spring Boot 3.5.7 |
 | ORM | Spring Data JPA, Hibernate (`ddl-auto=update`) |
-| DB | MariaDB `patientinfo`, 계정 `smartbiomed/smartbiomed` (소스에 하드코딩) |
+| DB | MariaDB `patientinfo`, 계정 `<legacy>/<legacy>` (Phase 7 T30: env 외부화, dev 프로필 .example로 분리. git 히스토리에 평문 잔존 — IMPL_SPEC §8.11 carry-over로 **회전 필요**) |
 | 도메인 | `Patient`, `Measurement`, `DataPoint` |
 | API prefix | `/api/v1` |
 | 정적 호스팅 | `src/main/resources/static/` 에서 SPA 서빙 |

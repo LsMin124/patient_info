@@ -1,0 +1,24 @@
+# Dev profile template. Copy to `application-dev.properties` (gitignored)
+# and edit the placeholder values to point at your local MariaDB instance.
+# Activate with `-Dspring.profiles.active=dev` or `SPRING_PROFILES_ACTIVE=dev`.
+#
+# Why a template instead of the real file: the credentials below are
+# placeholders. The previous tracked copy carried the legacy
+# `smartbiomed/smartbiomed` literal which was already leaked in git
+# history (see WEB_REBUILD_PLAN / IMPL_SPEC §8.11). Keeping the live
+# `application-dev.properties` untracked means a new contributor's local
+# credentials don't get committed by accident, and the legacy value is
+# not re-asserted on every fresh clone.
+#
+# Rotation note: the legacy credential MUST be rotated on any DB instance
+# that ever held it (the leak is permanent in git history). Production
+# deployments use the base `application.properties` and supply the real
+# values via DB_URL / DB_USERNAME / DB_PASSWORD environment variables.
+
+spring.datasource.url=${DB_URL:jdbc:mariadb://localhost:3306/patientinfo?useSSL=false&serverTimezone=Asia/Seoul}
+spring.datasource.username=${DB_USERNAME:REPLACE_WITH_LOCAL_DB_USER}
+spring.datasource.password=${DB_PASSWORD:REPLACE_WITH_LOCAL_DB_PASSWORD}
+
+# Permissive CORS for the Vite dev server. Production reads the value from
+# the env-var-driven base file instead.
+app.cors.allowed-origins=${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}

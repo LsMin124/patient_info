@@ -1008,8 +1008,8 @@ Phase 8 (운영화 + 컷오버)    ← 모든 Phase 완료
   - 자격증명·URL은 프로파일별로 분리.
 - `src/main/resources/application-dev.yml`:
   - `ddl-auto: update`, `show-sql: true`
-  - `spring.datasource.username: ${DB_USERNAME:smartbiomed}` (dev에만 default 허용)
-  - `spring.datasource.password: ${DB_PASSWORD:smartbiomed}`
+  - `spring.datasource.username: ${DB_USERNAME:<legacy>}` (dev에만 default 허용 — Phase 7 구현 시 properties 형태로 분리됨, §8.11 참고)
+  - `spring.datasource.password: ${DB_PASSWORD:<legacy>}`
 - `src/main/resources/application-prod.yml`:
   - `ddl-auto: validate`, `show-sql: false`
   - `spring.datasource.username: ${DB_USERNAME}` (**default 없음 → 미설정 시 부팅 실패**)
@@ -1405,7 +1405,7 @@ T30 잔여(완전 yml 변환·프로파일 분리·Flyway/마이그레이션·CO
 
 ### 8.5 기존 위험 관리 표 갱신 (§7.14 보완)
 
-- "운영 자격증명 노출" → **(post-review v2 부분 완화)**: `${DB_USERNAME}` / `${DB_PASSWORD}` 적용. 단 git 히스토리에 `smartbiomed/smartbiomed`가 평문 잔존하므로 운영 환경은 **즉시 회전** 필요. T34 RUNBOOK에서 수동 단계로 명시.
+- "운영 자격증명 노출" → **(post-review v2 부분 완화)**: `${DB_USERNAME}` / `${DB_PASSWORD}` 적용. 단 git 히스토리에 `<legacy>/<legacy>` (회전 필요)가 평문 잔존하므로 운영 환경은 **즉시 회전** 필요. T34 RUNBOOK에서 수동 단계로 명시.
 - "백엔드 내부 메시지 UI 노출" → **신규(완화됨)**: §8.3 HTTP sanitization.
 - "운영 source map 공개" → **신규(완화됨)**: §8.3 hidden sourcemap.
 - "useT/useTheme cross-component desync" → **신규(완화됨)**: §8.4 Provider Context.
@@ -1527,7 +1527,36 @@ Phase 6 (T29 — print stylesheet + PII 마스킹 토글) 머지 후 typescript 
 
 ### 8.10.2 Carry-over (Phase 7로 전달)
 
-- **DB credentials in `application.properties` 의 fallback literal `smartbiomed`** — Phase 7 T30 작업 범위. 본 리뷰 사이클에서는 코드 변경 없이 §8.10 carry-over에 박제. 배포 전 반드시 (a) inline default 제거 + 시작시 env 검증 throw, (b) 자격증명 로테이션.
+- **DB credentials (`<legacy>/<legacy>`) git 히스토리에 평문 잔존** — Phase 7 T30이 `application.properties` 의 fallback literal을 제거하고 §8.11이 `application-dev.properties` 도 .example shim로 분리했지만 git history는 영구. 배포 전 자격증명 로테이션 필수.
 - **`SessionList` 링크 href 의 raw `patientId`** — 라우팅에 필수라 렌더는 보존. 브라우저 인쇄 시 URL header에 등장하는 점은 piiMaskHint로 운영자에게 안내. 추가 완화는 운영 LAN trust 모델에 위임.
 - **MEDIUM의 SessionList/SessionCompare 잔존 하드코드 한글(Phase 5 이전부터)** — 본 사이클에서는 PatientList/Detail만 정리. SessionList 의 "선택한 N개 비교" 등은 Phase 8 polish 시 묶어서.
 - 이전 carry-over (TanStack Query mutation signal, ESLint typed-aware rules, backend `GET /api/v1/measurements/:id`) 모두 그대로 이월.
+
+---
+
+## 8.11 Plan Review v7 (post-Phase-7, 2026-05-18)
+
+Phase 7 (T30/T31/T32/T33 backend hardening) 머지 후 typescript + java + security 3-trio 병렬 감사 (java reviewer는 Phase 2 이후 첫 재투입).
+
+### 8.11.1 적용된 fix
+
+| Severity | 영역 | 내용 |
+|---|---|---|
+| CRITICAL | 자격증명 | `application-dev.properties` 가 추적되어 `<legacy>/<legacy>` 평문이 두 번째 commit으로 박힘 — `git rm --cached` + `.gitignore` + 분리된 `application-dev.properties.example` 템플릿 (`REPLACE_WITH_LOCAL_DB_USER`/`REPLACE_WITH_LOCAL_DB_PASSWORD` placeholder) |
+| HIGH | exception handling | `IOException`(ClientAbortException/EofException) 핸들러 추가 — WARN level, 스택트레이스 없음 (정상 네트워크 이벤트) |
+| HIGH | exception handling | `AsyncRequestTimeoutException` → 503 (이전엔 generic Exception → 500으로 흘러감) |
+| HIGH | exception handling | `DataIntegrityViolationException` → 409 (concurrent duplicate patientId 같은 race를 500이 아닌 conflict로 표시) |
+| HIGH | input validation | `saveDataPoints` 가 null array entry / 비-Number 값에서 NPE/CCE → 500 으로 흘렀던 경로를 명시적 `IllegalArgumentException`(400)으로 차단 |
+| MEDIUM | logging | `handleIllegalArgument`가 메시지 전문(patientId 포함) WARN log → "(message suppressed for PII)"로 축약. `handleUnreadableBody` 도 `ex.getMostSpecificCause().getClass().getSimpleName()`만 |
+| MEDIUM | CorsConfig | 데드 `origins == null` 분기 제거 — `@Value` 빈 default는 항상 `""` |
+| MEDIUM | tests | 새 `GlobalExceptionHandlerTest` (2건): `@MockitoBean` 으로 service stub해서 500 fallback + 409 DataIntegrity envelope 직접 검증. PII 토큰 미포함 assertion |
+| MEDIUM | tests | `PatientApiContractTest` raw assert → AssertJ `assertThat`, `doesNotContain("message"/"path")` 강화 + 새 `saveDataPoints_malformedPayload` 케이스 (attacker 토큰이 envelope에 표출 안 되는지) |
+| MEDIUM | tests | `http.test.ts` 에 새 sanitized envelope (`{status,error,timestamp}`) 모킹 케이스 추가 — 백엔드 envelope 변화에 frontend cause 처리가 깨지지 않음을 박제 |
+| LOW | docs | `WEB_REBUILD_PLAN.md §2.1` / `IMPL_SPEC.md §6.1`의 `smartbiomed` 평문 리터럴 → `<legacy>` 치환. 컨텍스트는 유지하되 working tree에서는 secret 제거 |
+
+### 8.11.2 Carry-over (Phase 8로 전달)
+
+- **자격증명 실제 로테이션** — git 히스토리의 `<legacy>` 노출은 영구이므로 운영 DB의 비밀번호를 변경하지 않으면 본 작업은 "구성 노출 차단"만 달성. T34 RUNBOOK.html에 운영자 수동 단계로 명시할 것.
+- **CORS `allowedMethods` 에 PUT/DELETE 추가 여부** — 본 phase의 frozen contract는 GET/POST만 사용. Phase 8에서 새 엔드포인트 도입 시 같이 확장.
+- **422 핸들러는 현재 unreachable code** — `@Valid` + Bean Validation 어노테이션이 dto에 없음. Phase 8 polish에서 `CreatePatientSchema` 와 동치인 backend `PatientDto` 어노테이션을 추가하면 핸들러가 활성화됨.
+- 이전 carry-over (TanStack mutation signal, ESLint typed-aware rules, backend `GET /api/v1/measurements/:id`, SessionList href patientId 노출, SessionList 잔존 하드코드 ko 한글) 모두 그대로 이월.
