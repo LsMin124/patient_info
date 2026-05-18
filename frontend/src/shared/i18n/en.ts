@@ -92,4 +92,17 @@ export const en: Translations = {
     description: 'The requested path does not exist.',
     home: 'Go home',
   },
+  settings: {
+    title: 'Settings',
+    theme: 'Theme',
+    themeLight: 'Light',
+    themeDark: 'Dark',
+    locale: 'Language',
+    localeKo: '한국어',
+    localeEn: 'English',
+    piiMask: 'Patient PII masking',
+    piiMaskHint: 'Mask patient names and IDs in screenshots, prints, and live demos.',
+    piiMaskOn: 'Masking on',
+    piiMaskOff: 'Masking off',
+  },
 }

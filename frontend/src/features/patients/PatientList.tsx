@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { usePiiMask } from '../../shared/hooks/PiiMaskProvider'
 import { useDebounce } from '../../shared/hooks/useDebounce'
 import { useT } from '../../shared/hooks/useT'
+import { maskName, maskPatientId } from '../../shared/lib/maskPii'
 import { Button } from '../../shared/ui/Button'
 import { EmptyState } from '../../shared/ui/EmptyState'
 import { ErrorFallback } from '../../shared/ui/ErrorFallback'
@@ -112,6 +114,7 @@ interface BodyProps {
 
 function PatientListBody({ isLoading, isError, error, onRetry, view, onPrev, onNext }: BodyProps) {
   const { t } = useT()
+  const { enabled: maskEnabled } = usePiiMask()
   if (isLoading) {
     return (
       <div
@@ -153,10 +156,10 @@ function PatientListBody({ isLoading, isError, error, onRetry, view, onPrev, onN
             <tr key={p.id} className="patient-list__row">
               <td>
                 <Link to={`/patients/${p.patientId}`} className="patient-list__link">
-                  {p.patientId}
+                  {maskEnabled ? maskPatientId(p.patientId) : p.patientId}
                 </Link>
               </td>
-              <td>{p.name}</td>
+              <td>{maskEnabled ? maskName(p.name) : p.name}</td>
               <td>{p.age}</td>
               <td>{p.sex}</td>
             </tr>

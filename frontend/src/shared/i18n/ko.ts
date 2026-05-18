@@ -93,6 +93,19 @@ export const ko: Translations = {
     description: '요청하신 경로는 존재하지 않습니다.',
     home: '홈으로',
   },
+  settings: {
+    title: '설정',
+    theme: '테마',
+    themeLight: '라이트',
+    themeDark: '다크',
+    locale: '언어',
+    localeKo: '한국어',
+    localeEn: 'English',
+    piiMask: '환자 PII 마스킹',
+    piiMaskHint: '화면 캡처·인쇄·시연 시 환자 이름과 ID를 마스킹합니다.',
+    piiMaskOn: '마스킹 켜짐',
+    piiMaskOff: '마스킹 꺼짐',
+  },
 }
 
 export type { Translations }

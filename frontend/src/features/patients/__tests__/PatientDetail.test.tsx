@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 
+import { PiiMaskProvider } from '../../../shared/hooks/PiiMaskProvider'
 import { LocaleProvider } from '../../../shared/i18n/LocaleProvider'
 import { server } from '../../../test/setup'
 import { PatientDetail } from '../PatientDetail'
@@ -17,12 +18,14 @@ function renderAt(patientId: string) {
     return (
       <QueryClientProvider client={client}>
         <LocaleProvider>
-          <MemoryRouter initialEntries={[`/patients/${patientId}`]}>
-            <Routes>
-              <Route path="/patients/:patientId" element={children} />
-              <Route path="/patients" element={<div>list</div>} />
-            </Routes>
-          </MemoryRouter>
+          <PiiMaskProvider>
+            <MemoryRouter initialEntries={[`/patients/${patientId}`]}>
+              <Routes>
+                <Route path="/patients/:patientId" element={children} />
+                <Route path="/patients" element={<div>list</div>} />
+              </Routes>
+            </MemoryRouter>
+          </PiiMaskProvider>
         </LocaleProvider>
       </QueryClientProvider>
     )
