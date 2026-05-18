@@ -1159,15 +1159,15 @@ Phase 8 (운영화 + 컷오버)    ← 모든 Phase 완료
 ## 4. 진행 체크리스트 (요약)
 
 ```
-Phase 0  [ ] T01  [ ] T02  [ ] T03
-Phase 1  [ ] T04  [ ] T05  [ ] T06  [ ] T07
-Phase 2  [ ] T08  [ ] T09  [ ] T10  [ ] T11  [ ] T12  [ ] T13  [ ] T14  [ ] T15  [ ] T16  [ ] T17
-Phase 3  [ ] T18  [ ] T19  [ ] T20  [ ] T21
-Phase 4  [ ] T22  [ ] T23  [ ] T24  [ ] T25  [ ] T26  [ ] T27
-Phase 5  [ ] T28
+Phase 0  [x] T01  [x] T02  [x] T03
+Phase 1  [x] T04  [x] T05  [x] T06  [x] T07
+Phase 2  [x] T08  [x] T09  [x] T10  [x] T11  [x] T12  [x] T13  [x] T14  [x] T15  [x] T16  [x] T17
+Phase 3  [x] T18  [x] T19  [x] T20  [x] T21
+Phase 4  [x] T22  [x] T23  [x] T24  [x] T25  [x] T26  [x] T27
+Phase 5  [x] T28
 Phase 6  [x] T29
 Phase 7  [x] T30  [x] T31  [x] T32  [x] T33
-Phase 8  [ ] T34  [ ] T35  [ ] T36
+Phase 8  [x] T34  [x] T35  [x] T36
 ```
 
 ---

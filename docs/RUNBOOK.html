@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>patientInfo · 운영 RUNBOOK</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --surface-2: #f4f4f0;
+    --fg: #1a1a1a;
+    --fg-muted: #5b5b5b;
+    --fg-subtle: #8a8a8a;
+    --accent: #1f3a5f;
+    --accent-soft: #e9eef6;
+    --warn: #b04a00;
+    --danger: #b81b1b;
+    --ok: #1f6d3a;
+    --border: #e3e3dd;
+    --code-bg: #14171c;
+    --code-fg: #d8e1f0;
+    --radius: 6px;
+    --max: 960px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 16px/1.65 ui-sans-serif, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Pretendard", sans-serif;
+    padding: 56px 24px 96px;
+  }
+  main { max-width: var(--max); margin: 0 auto; }
+  header.hero {
+    border-left: 4px solid var(--accent);
+    padding: 6px 0 6px 20px;
+    margin-bottom: 36px;
+  }
+  header.hero h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: -0.02em; }
+  header.hero .sub { color: var(--fg-muted); font-size: 16px; }
+  header.hero .meta {
+    margin-top: 14px; color: var(--fg-subtle);
+    font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  nav.toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 40px;
+    font-size: 14.5px;
+  }
+  nav.toc strong { color: var(--accent); font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; }
+  nav.toc ol { margin: 8px 0 0; padding-left: 22px; }
+  nav.toc a { color: var(--fg); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+  h2 {
+    margin: 56px 0 14px;
+    font-size: 21px;
+    letter-spacing: -0.01em;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+  }
+  h3 { margin: 28px 0 8px; font-size: 16px; }
+  p { margin: 10px 0; }
+  ol li, ul li { margin: 5px 0; }
+  code {
+    font: 14px/1.5 "JetBrains Mono", "SFMono-Regular", ui-monospace, Menlo, monospace;
+    background: #ecebe4;
+    color: #2a2a2a;
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+  pre {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    padding: 16px 20px;
+    border-radius: var(--radius);
+    overflow-x: auto;
+    font: 13.5px/1.55 "JetBrains Mono", "SFMono-Regular", ui-monospace, Menlo, monospace;
+  }
+  pre code { background: transparent; color: inherit; padding: 0; }
+  .callout {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 16px 0;
+    color: #122236;
+    font-size: 14.5px;
+  }
+  .callout.warn { background: #fbeede; border-color: var(--warn); color: #6b2e00; }
+  .callout.danger { background: #f8e0e0; border-color: var(--danger); color: #6b1010; }
+  .callout.ok { background: #e7f3ec; border-color: var(--ok); color: #154024; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14.5px;
+    margin: 12px 0;
+  }
+  th, td {
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    padding: 9px 10px;
+    vertical-align: top;
+  }
+  th { color: var(--fg-muted); font-weight: 600; background: var(--surface-2); }
+  .step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px 4px;
+    margin: 10px 0;
+  }
+  .step h4 { margin: 0 0 6px; font-size: 14px; color: var(--accent); }
+  footer {
+    margin-top: 80px;
+    color: var(--fg-subtle);
+    font-size: 13px;
+    text-align: center;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+</style>
+</head>
+<body>
+<main>
+
+<header class="hero">
+  <h1>patientInfo · 운영 RUNBOOK</h1>
+  <div class="sub">배포 · 자격증명 로테이션 · 프로파일 운용 · 트러블슈팅</div>
+  <div class="meta">v1.0 · 2026-05-18 · 단일-노드 클리닉 LAN 배포 기준</div>
+</header>
+
+<nav class="toc">
+  <strong>목차</strong>
+  <ol>
+    <li><a href="#preflight">사전 점검</a></li>
+    <li><a href="#deploy">신규 배포</a></li>
+    <li><a href="#rotate">자격증명 로테이션 (필수, Phase 7 carry-over)</a></li>
+    <li><a href="#profile">프로파일 운용 — dev / prod</a></li>
+    <li><a href="#smoke">스모크 테스트</a></li>
+    <li><a href="#trouble">트러블슈팅</a></li>
+    <li><a href="#backup">백업 / 복구</a></li>
+    <li><a href="#rollback">롤백</a></li>
+  </ol>
+</nav>
+
+<section id="preflight">
+  <h2>1. 사전 점검</h2>
+  <p>운영 서버에 다음이 설치되어 있어야 합니다.</p>
+  <table>
+    <thead><tr><th>구성요소</th><th>버전</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td>OpenJDK / Temurin</td><td>17.0.13 이상</td><td>21 이상은 미테스트</td></tr>
+      <tr><td>MariaDB</td><td>10.6 이상</td><td>UTF-8, <code>patientinfo</code> DB 생성 필요</td></tr>
+      <tr><td>Node.js</td><td>20.x</td><td>빌드 호스트에만 — 운영 서버는 빌드된 jar만 있으면 됨</td></tr>
+      <tr><td>pnpm</td><td>9.15.9 (corepack)</td><td>전역 설치 금지</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn">
+    클리닉 LAN 내부 trust 모델 가정입니다. 인증·인가 계층이 없으므로 외부에서 접근 가능한 네트워크에 배포하면 안 됩니다.
+  </div>
+</section>
+
+<section id="deploy">
+  <h2>2. 신규 배포</h2>
+  <div class="step">
+    <h4>STEP 1 · 빌드 (CI 또는 빌드 호스트)</h4>
+    <pre><code>git clone &lt;repo&gt; patient_info &amp;&amp; cd patient_info
+JAVA_HOME=/path/to/jdk-17 PATH=$JAVA_HOME/bin:$PATH ./gradlew build
+# 산출물: build/libs/urp-*.jar (프론트엔드 정적 자원 포함)</code></pre>
+  </div>
+  <div class="step">
+    <h4>STEP 2 · 자격증명 환경변수 설정 (운영 호스트)</h4>
+    <pre><code># 시스템 환경 또는 systemd Service [Service] Environment= 라인
+DB_URL="jdbc:mariadb://&lt;db-host&gt;:3306/patientinfo?useSSL=true&amp;serverTimezone=Asia/Seoul"
+DB_USERNAME="&lt;rotated_user&gt;"
+DB_PASSWORD="&lt;rotated_secret&gt;"
+CORS_ALLOWED_ORIGINS="https://&lt;web-host&gt;"   # SPA가 별도 호스트인 경우. same-origin이면 빈 값 OK</code></pre>
+    <div class="callout danger">
+      <strong>fallback이 없습니다.</strong> 위 셋 중 하나라도 비어 있으면 Spring이 부팅에 실패합니다.
+      이건 정상 동작이며, Phase 7 T30이 의도한 fail-fast 보호입니다.
+    </div>
+  </div>
+  <div class="step">
+    <h4>STEP 3 · 실행</h4>
+    <pre><code>java -jar build/libs/urp-0.0.1-SNAPSHOT.jar
+# 또는 systemd:  ExecStart=/usr/bin/java -jar /opt/patientinfo/urp.jar</code></pre>
+  </div>
+  <div class="step">
+    <h4>STEP 4 · 헬스체크</h4>
+    <pre><code>curl -fsSL http://&lt;host&gt;:8080/api/v1/patients | head -c 200
+curl -i http://&lt;host&gt;:8080/api/v1/patients/__noop__/measurements
+# 두 번째 응답은 404, body는 {"status":404,"error":"Not Found","timestamp":"..."}
+# 응답 본문에 어떤 patientId/ID도 echo되어선 안 됨</code></pre>
+  </div>
+</section>
+
+<section id="rotate">
+  <h2>3. 자격증명 로테이션 (필수)</h2>
+  <div class="callout danger">
+    <strong>레거시 자격증명</strong> (<code>&lt;legacy&gt;/&lt;legacy&gt;</code>) 이 git 히스토리에 평문으로 영구히 박혀 있습니다.
+    Phase 7이 코드 fallback은 제거했지만, 같은 비밀번호를 쓰는 DB 인스턴스가 존재한다면 즉시 로테이션이 필요합니다.
+  </div>
+  <ol>
+    <li>새 자격증명 발급 — 길이 16자 이상, 알파넘+기호 혼합.
+      <pre><code>mariadb -u root -p
+&gt; ALTER USER 'old_user'@'%' IDENTIFIED BY '&lt;new_secret&gt;';
+&gt; FLUSH PRIVILEGES;</code></pre>
+    </li>
+    <li>운영 호스트의 <code>DB_PASSWORD</code> 환경변수 교체.</li>
+    <li>서비스 재시작 (<code>systemctl restart patientinfo</code> 또는 jar 재기동).</li>
+    <li>로그에 <code>HikariPool-1 - Start completed</code> 메시지 확인.</li>
+    <li>2단계의 헬스체크 재실행으로 인증 동작 확인.</li>
+    <li>구 자격증명 제거: <code>DROP USER 'old_user'@'%';</code> (충분한 안정화 기간 이후).</li>
+  </ol>
+</section>
+
+<section id="profile">
+  <h2>4. 프로파일 운용</h2>
+  <table>
+    <thead><tr><th>프로파일</th><th>활성화</th><th>속성</th><th>용도</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>없음 (=prod)</strong></td>
+        <td>기본값</td>
+        <td>모든 자격증명 env로부터, 동일 origin CORS</td>
+        <td>운영 배포</td>
+      </tr>
+      <tr>
+        <td><code>dev</code></td>
+        <td><code>SPRING_PROFILES_ACTIVE=dev</code></td>
+        <td>로컬 dev용 fallback, Vite 5173 origin 허용</td>
+        <td>로컬 개발 (gitignored <code>application-dev.properties</code> 필요)</td>
+      </tr>
+      <tr>
+        <td><code>test</code></td>
+        <td>JUnit <code>@ActiveProfiles("test")</code></td>
+        <td>H2 in-memory, 빈 CORS</td>
+        <td>모든 contract 테스트</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3>dev 프로파일 첫 세팅</h3>
+  <pre><code>cp src/main/resources/application-dev.properties.example \
+   src/main/resources/application-dev.properties
+# 그리고 REPLACE_WITH_LOCAL_DB_USER / _PASSWORD 두 줄을 본인 로컬 MariaDB에 맞게 수정
+# 이 파일은 .gitignore에 등록되어 있어 절대 커밋되지 않습니다.</code></pre>
+</section>
+
+<section id="smoke">
+  <h2>5. 스모크 테스트</h2>
+  <ol>
+    <li><code>curl http://host:8080/</code> — SPA가 index.html을 반환해야 함.</li>
+    <li><code>curl http://host:8080/api/v1/patients</code> — JSON 배열 반환.</li>
+    <li>브라우저에서 <code>/settings</code> 진입 → 테마 토글 → 새로고침 후 유지되는지.</li>
+    <li><code>/patients</code> → 환자 클릭 → 세션 클릭 → 그래프와 통계 카드 표시.</li>
+    <li>같은 페이지에서 "CSV 내려받기" 동작 확인.</li>
+    <li>"마스킹 켜짐" 설정 후 환자 목록에서 이름/ID가 마스킹되는지.</li>
+    <li>인쇄 미리보기 (Ctrl+P) → chrome (헤더·푸터·버튼) 이 숨겨졌는지 + 브라우저 인쇄 옵션의 "머리글/바닥글" OFF 확인 (URL 노출 방지).</li>
+  </ol>
+</section>
+
+<section id="trouble">
+  <h2>6. 트러블슈팅</h2>
+  <table>
+    <thead><tr><th>증상</th><th>원인</th><th>조치</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>부팅 시 <code>Could not resolve placeholder 'DB_USERNAME'</code></td>
+        <td>운영 프로파일이 fallback 없는데 env 미설정</td>
+        <td>2단계의 세 env 변수 모두 export 후 재기동</td>
+      </tr>
+      <tr>
+        <td>모든 API가 500 응답</td>
+        <td>DB 연결 실패 — Hikari 로그 확인</td>
+        <td>DB host/port/credential 점검, 방화벽 / firewalld 점검</td>
+      </tr>
+      <tr>
+        <td>SPA가 정적 자원 404</td>
+        <td>빌드된 자원이 jar에 없음</td>
+        <td><code>./gradlew bootJar</code> 재실행 (-PskipFrontend 없이)</td>
+      </tr>
+      <tr>
+        <td>SPA가 API 호출 시 CORS 에러</td>
+        <td>운영에서 SPA가 별도 origin인데 <code>CORS_ALLOWED_ORIGINS</code> 미설정</td>
+        <td>SPA host를 CSV로 추가 후 서비스 재기동</td>
+      </tr>
+      <tr>
+        <td>인쇄 페이지에 환자 ID가 URL footer로 노출</td>
+        <td>브라우저 인쇄 옵션의 "머리글/바닥글" 이 켜져 있음</td>
+        <td>인쇄 다이얼로그에서 직접 OFF (CSS로는 차단 불가)</td>
+      </tr>
+      <tr>
+        <td>세션 비교가 4개 초과 시 동작 안 함</td>
+        <td>의도된 cap (<code>MAX_COMPARE_IDS=4</code>)</td>
+        <td>가독성을 위한 정상 제약 — 변경 시 IMPL_SPEC §8.9 확인</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="backup">
+  <h2>7. 백업 / 복구</h2>
+  <p>DB 단일 노드 백업 — cron 권장:</p>
+  <pre><code>0 3 * * * mariadb-dump --single-transaction patientinfo \
+  | gzip &gt; /var/backups/patientinfo/$(date +\%F).sql.gz</code></pre>
+  <p>복구:</p>
+  <pre><code>gunzip -c /var/backups/patientinfo/2026-05-17.sql.gz | mariadb patientinfo</code></pre>
+  <div class="callout warn">
+    환자 PII가 포함되므로 백업 파일도 동일한 접근 통제·암호화를 적용해야 합니다.
+  </div>
+</section>
+
+<section id="rollback">
+  <h2>8. 롤백</h2>
+  <p>jar 기반 배포이므로 롤백은 단순:</p>
+  <ol>
+    <li>이전 jar로 심볼릭 링크 / systemd ExecStart 변경.</li>
+    <li><code>systemctl restart patientinfo</code>.</li>
+    <li>헬스체크 재실행.</li>
+  </ol>
+  <p>스키마 마이그레이션 (<code>ddl-auto=update</code>)이 비파괴적으로 동작하므로 컬럼 추가 정도는 롤백 안전. 컬럼 삭제·rename 같은 파괴적 변경은 별도 마이그레이션 스크립트 + 백업 후 시도.</p>
+</section>
+
+<footer>
+  patientInfo · RUNBOOK v1.0 · Phase 8 · 2026-05-18 · 마지막 검토자: 운영팀
+</footer>
+
+</main>
+</body>
+</html>

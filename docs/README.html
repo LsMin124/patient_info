@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>patientInfo · 환자 근력측정 모니터링 시스템</title>
+<style>
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --surface-2: #fbfaf6;
+    --fg: #1a1a1a;
+    --fg-muted: #5b5b5b;
+    --fg-subtle: #8a8a8a;
+    --accent: #234e35;
+    --accent-soft: #e9f2ed;
+    --warn: #b04a00;
+    --danger: #b81b1b;
+    --border: #e7e5dc;
+    --code-bg: #0f1a14;
+    --code-fg: #d6e4dc;
+    --radius: 6px;
+    --max: 920px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); }
+  body {
+    font: 16px/1.65 ui-sans-serif, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Pretendard", sans-serif;
+    padding: 56px 24px 96px;
+  }
+  main { max-width: var(--max); margin: 0 auto; }
+  header.hero {
+    border-left: 4px solid var(--accent);
+    padding: 6px 0 6px 20px;
+    margin-bottom: 48px;
+  }
+  header.hero h1 {
+    margin: 0 0 6px;
+    font-size: 30px;
+    letter-spacing: -0.02em;
+  }
+  header.hero .sub { color: var(--fg-muted); font-size: 17px; }
+  header.hero .meta {
+    margin-top: 14px;
+    color: var(--fg-subtle);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  h2 {
+    margin: 56px 0 14px;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+  }
+  h3 { margin: 28px 0 8px; font-size: 17px; }
+  p { margin: 10px 0; }
+  ul, ol { margin: 10px 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+  code {
+    font: 14px/1.5 "JetBrains Mono", "SFMono-Regular", ui-monospace, Menlo, monospace;
+    background: #efece4;
+    color: #2a2a2a;
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+  pre {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    padding: 18px 20px;
+    border-radius: var(--radius);
+    overflow-x: auto;
+    font: 13.5px/1.55 "JetBrains Mono", "SFMono-Regular", ui-monospace, Menlo, monospace;
+  }
+  pre code { background: transparent; color: inherit; padding: 0; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 14px 0;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+  .card h4 { margin: 0 0 6px; font-size: 14px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; }
+  .card .v { font-size: 15px; color: var(--fg); }
+  .callout {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 16px 0;
+    color: #1f3a2a;
+    font-size: 14.5px;
+  }
+  .callout.warn { background: #fbeede; border-color: var(--warn); color: #6b2e00; }
+  .callout.danger { background: #f8e0e0; border-color: var(--danger); color: #6b1010; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 14.5px;
+  }
+  th, td {
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    padding: 9px 10px;
+    vertical-align: top;
+  }
+  th {
+    color: var(--fg-muted);
+    font-weight: 600;
+    background: var(--surface-2);
+  }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 4px; }
+  .badge {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 12.5px;
+    color: var(--fg-muted);
+  }
+  footer {
+    margin-top: 80px;
+    color: var(--fg-subtle);
+    font-size: 13px;
+    text-align: center;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+</style>
+</head>
+<body>
+<main>
+
+<header class="hero">
+  <h1>patientInfo</h1>
+  <div class="sub">근기능 측정 디바이스의 임상 모니터링 웹 — Spring Boot 백엔드 + React SPA 프론트엔드</div>
+  <div class="meta">v2.0 · Phase 8 · 2026-05-18</div>
+  <div class="badges">
+    <span class="badge">Java 17 / Spring Boot 3.5.7</span>
+    <span class="badge">React 19 / Vite 6 / TS strict</span>
+    <span class="badge">MariaDB · H2 (test)</span>
+    <span class="badge">동결 와이어 컨트랙트</span>
+  </div>
+</header>
+
+<section>
+  <h2>이 프로젝트는 무엇인가</h2>
+  <p>
+    환자가 디바이스로 측정한 근력 시계열 데이터를 임상의가 브라우저에서 조회·비교·인쇄할 수 있게 해주는 단일-노드 웹 애플리케이션입니다.
+    데이터는 디바이스 → Spring Boot API → MariaDB → React SPA 의 순서로 흐르고, 모든 트래픽은 클리닉 LAN 내부에서만 발생합니다.
+  </p>
+  <div class="callout">
+    <strong>동결 컨트랙트:</strong>
+    디바이스 펌웨어와 Flutter 앱이 이미 운영 중이라
+    <code>measurement_Id</code> (대문자 I), 인제스트는 snake_case, 응답은 camelCase,
+    그리고 <strong>인증 없음</strong> 이라는 와이어 형태는 변경할 수 없습니다.
+    이 가정 아래 백엔드를 강화하고 프론트를 전면 재작성한 것이 v2.0 입니다.
+  </div>
+</section>
+
+<section>
+  <h2>주요 기능</h2>
+  <div class="grid">
+    <div class="card"><h4>환자 관리</h4><div class="v">목록 검색·정렬·페이지, 등록 폼 (Zod 검증)</div></div>
+    <div class="card"><h4>세션 상세</h4><div class="v">Chart.js 그래프, 통계 카드 (피크·RFD·임펄스), CSV 내보내기</div></div>
+    <div class="card"><h4>세션 비교</h4><div class="v">최대 4개 세션을 동일 차트에 오버레이, 통계 표 비교</div></div>
+    <div class="card"><h4>설정</h4><div class="v">테마 · 언어(ko/en) · PII 마스킹 토글 — 모두 localStorage 동기화</div></div>
+    <div class="card"><h4>인쇄</h4><div class="v">전용 print stylesheet — chrome 숨김, B/W 출력 최적화</div></div>
+    <div class="card"><h4>접근성</h4><div class="v">키보드, 스크린리더, prefers-reduced-motion 준수</div></div>
+  </div>
+</section>
+
+<section>
+  <h2>레포 구조</h2>
+  <pre><code>patient_info/
+├── src/                          # Spring Boot 백엔드
+│   ├── main/java/com/project/urp/
+│   │   ├── config/CorsConfig.java
+│   │   ├── controller/MeasurementController, GlobalExceptionHandler
+│   │   ├── domain/{Patient,Measurement,DataPoint}
+│   │   ├── dto/, repository/, service/
+│   │   └── UrpApplication.java
+│   └── main/resources/
+│       ├── application.properties           # prod: 모두 env에서 주입
+│       ├── application-dev.properties.example   # 로컬 dev 템플릿 (gitignored 실체)
+│       └── static/                          # 빌드된 SPA (frontendSync로 생성)
+├── frontend/                     # React 19 + Vite 6 + TS strict
+│   ├── src/
+│   │   ├── app/                  # providers, routes, Settings 페이지
+│   │   ├── features/{patients,measurements}/   # 화면별 feature 모듈
+│   │   ├── shared/{hooks,lib,ui,i18n,...}      # 공통 부품
+│   │   ├── styles/               # tokens.css, global.css, print.css
+│   │   └── test/                 # MSW handlers, setup
+│   └── vitest.config.ts, vite.config.ts, eslint.config.mjs
+├── docs/
+│   ├── README.html · RUNBOOK.html · PROGRESS_REPORT.html  # 사람 대상
+│   ├── PHASE_REVIEW.md                                      # AI / dev 대상
+│   └── (CODEMAPS, RUNBOOK.md mirror …)
+├── IMPL_SPEC.md                  # 구현 명세 + 각 phase 리뷰 기록
+├── WEB_REBUILD_PLAN.md           # 전략 + 동결 컨트랙트 § 3
+└── build.gradle                  # 백엔드 + frontendInstall/Build/Sync 통합 빌드</code></pre>
+</section>
+
+<section>
+  <h2>로컬 실행</h2>
+  <h3>한 번만 — 로컬 dev 자격증명 파일 만들기</h3>
+  <pre><code>cp src/main/resources/application-dev.properties.example \
+   src/main/resources/application-dev.properties
+# 그리고 REPLACE_WITH_LOCAL_DB_USER / _PASSWORD 두 줄을 본인 로컬 MariaDB에 맞게 수정
+# (이 파일은 .gitignore 되어 있어 절대 커밋되지 않음 — IMPL_SPEC §8.11)</code></pre>
+
+  <h3>프론트 dev 서버 (Vite 5173, HMR)</h3>
+  <pre><code>cd frontend
+corepack pnpm@9.15.9 install
+corepack pnpm@9.15.9 dev</code></pre>
+
+  <h3>백엔드 (dev 프로파일)</h3>
+  <pre><code>JAVA_HOME=$HOME/.local/jdks/jdk-17.0.13+11 \
+PATH=$JAVA_HOME/bin:$PATH \
+SPRING_PROFILES_ACTIVE=dev \
+./gradlew bootRun -PskipFrontend=true</code></pre>
+
+  <h3>풀빌드 (CI 동일 게이트)</h3>
+  <pre><code>JAVA_HOME=$HOME/.local/jdks/jdk-17.0.13+11 \
+PATH=$JAVA_HOME/bin:$PATH \
+./gradlew build</code></pre>
+
+  <div class="callout warn">
+    <strong>운영 환경(=dev 프로파일 아님)</strong> 으로 실행하려면
+    <code>DB_URL</code>, <code>DB_USERNAME</code>, <code>DB_PASSWORD</code> 환경변수가 반드시 필요합니다.
+    Phase 7 T30 이후 fallback default가 제거되어 미설정 시 부팅이 실패합니다 — 이게 정상 동작입니다.
+  </div>
+</section>
+
+<section>
+  <h2>API 요약</h2>
+  <p>전체 와이어 형태는 <code>WEB_REBUILD_PLAN.md §3</code> 가 단일 출처입니다. 여기서는 빠른 참조용 요약만 보여줍니다.</p>
+  <table>
+    <thead><tr><th>Method</th><th>Path</th><th>설명</th></tr></thead>
+    <tbody>
+      <tr><td>GET</td><td><code>/api/v1/patients</code></td><td>환자 목록</td></tr>
+      <tr><td>POST</td><td><code>/api/v1/patients</code></td><td>환자 등록 (snake_case 입력)</td></tr>
+      <tr><td>POST</td><td><code>/api/v1/measurements/start</code></td><td>측정 세션 시작 — 응답 <code>{ measurement_Id }</code></td></tr>
+      <tr><td>POST</td><td><code>/api/v1/measurements/{id}/data</code></td><td>데이터 포인트 일괄 저장</td></tr>
+      <tr><td>POST</td><td><code>/api/v1/measurements/{id}/stop</code></td><td>세션 종료</td></tr>
+      <tr><td>GET</td><td><code>/api/v1/patients/{patientId}/measurements</code></td><td>환자의 세션 요약 목록</td></tr>
+      <tr><td>GET</td><td><code>/api/v1/measurements/{id}/data</code></td><td>세션의 상세 시계열</td></tr>
+    </tbody>
+  </table>
+  <p>모든 에러 응답은 <code>{ status, error, timestamp }</code> 형태의 sanitized envelope — exception 메시지는 노출되지 않습니다 (Phase 7 T31 GlobalExceptionHandler).</p>
+</section>
+
+<section>
+  <h2>운영자에게</h2>
+  <p>
+    배포·자격증명 로테이션·트러블슈팅 절차는 <a href="RUNBOOK.html">RUNBOOK.html</a> 을 보세요.
+    현재 진척도는 <a href="PROGRESS_REPORT.html">PROGRESS_REPORT.html</a> 에 있고,
+    각 phase의 리뷰 결과 trail은 <a href="../IMPL_SPEC.md">IMPL_SPEC.md §8</a> 에 있습니다.
+  </p>
+</section>
+
+<footer>
+  patientInfo · v2.0 (Phase 8) · Java 17 · React 19 · 2026-05-18
+</footer>
+
+</main>
+</body>
+</html>
