@@ -122,13 +122,15 @@
     <h1>환자 근력측정 웹 리빌드 — 진행 리포트</h1>
     <p class="lede">
       디바이스/앱과의 와이어 계약을 보존하면서 기존 웹 인터페이스를
-      React 19 + Vite 6 + TS 5로 재작성합니다. 본 리포트는 Phase 5
-      (세션 비교) 종료 시점의 스냅샷입니다.
+      React 19 + Vite 6 + TS 5로 재작성합니다. <strong>v2.0 완성 시점의
+      최종 스냅샷</strong>입니다 — 모든 Phase 0–8 + 7회의 review 사이클이
+      종료되었습니다.
     </p>
     <div class="meta">
-      <span><strong>Date</strong> 2026-05-15</span>
+      <span><strong>Date</strong> 2026-05-18</span>
       <span><strong>Branch</strong> <code>main</code></span>
-      <span><strong>Phases done</strong> 0 · 1 · 2 · 3 · 4 · 5 (+ 4 review cycles)</span>
+      <span><strong>Tag</strong> <code>v2.0-final</code></span>
+      <span><strong>Phases done</strong> 0 · 1 · 2 · 3 · 4 · 5 · 6 · 7 · 8 (+ 7 review cycles)</span>
     </div>
   </header>
 
@@ -137,8 +139,8 @@
     <div class="grid">
       <div class="card">
         <div class="label">Frontend 단위 테스트</div>
-        <div class="num">214</div>
-        <div class="sub">모두 그린, 30개 테스트 파일</div>
+        <div class="num">235</div>
+        <div class="sub">모두 그린, 32개 테스트 파일 (Vitest + MSW)</div>
       </div>
       <div class="card">
         <div class="label">Playwright E2E</div>
@@ -147,14 +149,14 @@
       </div>
       <div class="card">
         <div class="label">Backend MockMvc 컨트랙트</div>
-        <div class="num">15</div>
-        <div class="sub">디바이스/앱 와이어 회귀 차단</div>
+        <div class="num">22</div>
+        <div class="sub">디바이스/앱 와이어 회귀 차단 + sanitized envelope + CORS preflight</div>
       </div>
       <div class="card">
         <div class="label">진척률</div>
-        <div class="num">75%</div>
-        <div class="progress"><span style="width:75%"></span></div>
-        <div class="sub">6/8 phase 완료 (T28까지)</div>
+        <div class="num">100%</div>
+        <div class="progress"><span style="width:100%"></span></div>
+        <div class="sub">9/9 phase 완료 (T01–T36 + 7 review cycles)</div>
       </div>
     </div>
   </section>
@@ -213,23 +215,23 @@
         <tr>
           <td><strong>6</strong></td>
           <td>인쇄 / 보고서 (T29)</td>
-          <td><span class="badge badge--todo">예정</span></td>
-          <td>—</td>
-          <td><code>@media print</code> 스타일, 보고서 시트, PII 마스킹 토글</td>
+          <td><span class="badge badge--done">완료</span></td>
+          <td><span class="pill">v6</span></td>
+          <td><code>@media print</code> + <code>@page</code>, PII 마스킹 Provider (localStorage + 크로스탭 sync), Settings 페이지, maskName grapheme-aware + NFC/ZW 가드</td>
         </tr>
         <tr>
           <td><strong>7</strong></td>
-          <td>백엔드 비파괴 보강 (T30–T33)</td>
-          <td><span class="badge badge--todo">예정</span></td>
-          <td>—</td>
-          <td>application.yml + 프로파일 분리, <code>@RestControllerAdvice</code>, CORS, T33 잔여</td>
+          <td>백엔드 보강 (T30–T33)</td>
+          <td><span class="badge badge--done">완료</span></td>
+          <td><span class="pill">v7</span></td>
+          <td>자격증명 fail-fast 외부화, <code>@RestControllerAdvice</code> sanitized envelope (IOException / DataIntegrity / AsyncTimeout), CORS allowlist, saveDataPoints null/non-Number 가드</td>
         </tr>
         <tr>
           <td><strong>8</strong></td>
-          <td>운영화 · 컷오버 (T34–T36)</td>
-          <td><span class="badge badge--todo">예정</span></td>
-          <td>—</td>
-          <td>README + RUNBOOK (HTML), GitHub Actions CI, 컷오버 검증</td>
+          <td>릴리즈 준비 (T34–T36)</td>
+          <td><span class="badge badge--done">완료</span></td>
+          <td><span class="pill">v8 FINAL</span></td>
+          <td>README/RUNBOOK/PROGRESS HTML + RUNBOOK/API MD mirror, GitHub Actions CI (parallel jobs, fail-fast env contract), legacy static cutover, Patient.patientId UNIQUE + read-only @Transactional, 잔존 ko 한글 i18n migration</td>
         </tr>
       </tbody>
     </table>
@@ -282,6 +284,21 @@
           <td>1</td><td>2</td><td>2</td>
           <td>compareIds garbage 분류 보정, OverlayChart series memo, 환자-슬롯 cap 문서화</td>
         </tr>
+        <tr>
+          <td>post-Phase-6</td><td>TS · Security</td>
+          <td>4</td><td>5</td><td>3</td>
+          <td>PiiMaskProvider atomic write, maskName grapheme-aware, http.ts schema-fail PII-safe, role="radiogroup" 정정</td>
+        </tr>
+        <tr>
+          <td>post-Phase-7</td><td>TS · Java · Security</td>
+          <td>5</td><td>6</td><td>3</td>
+          <td>application-dev.properties 추적 해제(.example shim), GlobalExceptionHandler IO/AsyncTimeout/DataIntegrity, log PII 제거, saveDataPoints null/non-Number 가드</td>
+        </tr>
+        <tr>
+          <td>post-Phase-8 (FINAL)</td><td>TS · Java · Security</td>
+          <td>3</td><td>5</td><td>2</td>
+          <td>잔존 ko 한글 i18n migration, Patient.patientId UNIQUE, readOnly @Transactional, README 리뉴얼 + docs/API.md 분리</td>
+        </tr>
       </tbody>
     </table>
   </section>
@@ -311,13 +328,17 @@
   </section>
 
   <section>
-    <h2>다음 단계</h2>
-    <ol>
-      <li><strong>Phase 6 (T29)</strong> — 인쇄 스타일 + PII 마스킹 토글.</li>
-      <li><strong>Phase 7 (T30–T33)</strong> — 백엔드 비파괴 보강 (yml, 프로파일, ControllerAdvice, CORS).</li>
-      <li><strong>Phase 8 (T34–T36)</strong> — README/RUNBOOK (HTML 포함), GitHub Actions CI, legacy static 컷오버.</li>
-      <li><strong>Final review</strong> — 출하 전 종합 감사.</li>
-    </ol>
+    <h2>완성 / 운영자 핸드오프</h2>
+    <p>
+      v2.0이 완성되어 main 에 머지되었습니다 (태그 <code>v2.0-final</code>).
+      운영 배포 전 반드시 처리할 단 한 가지: <strong>DB 자격증명 로테이션</strong>
+      (절차는 <a href="RUNBOOK.html#rotate">RUNBOOK §3</a>).
+    </p>
+    <ul>
+      <li><strong>운영자 대상 문서</strong> — <a href="README.html">docs/README.html</a> + <a href="RUNBOOK.html">docs/RUNBOOK.html</a></li>
+      <li><strong>AI / dev 검색</strong> — <code>../README.md</code>, <code>../IMPL_SPEC.md §8</code>, <code>RUNBOOK.md</code></li>
+      <li><strong>v2 백로그 (carry-over)</strong> — <code>IMPL_SPEC.md §8.12.2</code> 표 참조 (모두 출하에 영향 없음, 운영자 작업 또는 v2 endpoint 도입 항목).</li>
+    </ul>
   </section>
 
   <footer>

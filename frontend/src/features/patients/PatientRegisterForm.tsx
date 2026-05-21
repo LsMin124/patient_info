@@ -117,7 +117,7 @@ export function PatientRegisterForm({ onDone }: PatientRegisterFormProps) {
         autoFocus
         required
         {...(errors.patientId ? { error: errors.patientId } : {})}
-        hint="문자/숫자/-/_ 만, 1–32자"
+        hint={t('patient.register.patientIdHint')}
       />
       <Input
         label={t('patient.register.name')}

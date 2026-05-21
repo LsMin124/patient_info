@@ -28,7 +28,7 @@ public class MeasurementController {
         return ResponseEntity.ok(measurementService.findAllPatients());
     }
 
-    // Post, +측정 세션, { measurement_id: 123 } 형태 반환
+    // POST, 측정 세션 시작. 응답은 정확히 { measurement_Id: 123 } (대문자 I — 동결 컨트랙트).
     @PostMapping("/measurements/start")
     public ResponseEntity<Map<String, Long>> startMeasurements(@RequestBody Map<String, String> payload) {
         Measurement measurement = measurementService.startMeasurement(payload);

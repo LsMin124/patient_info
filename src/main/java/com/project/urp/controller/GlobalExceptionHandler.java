@@ -73,7 +73,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleEntityNotFound(EntityNotFoundException ex) {
-        log.warn("[404] EntityNotFoundException: {}", ex.getMessage());
+        // ex.getMessage() typically contains the entity class name and id —
+        // both internal schema detail. Log class only, consistent with the
+        // other handlers in this advice.
+        log.warn("[404] EntityNotFoundException class={}", ex.getClass().getSimpleName());
         return error(HttpStatus.NOT_FOUND);
     }
 

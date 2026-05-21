@@ -43,6 +43,7 @@ export interface Translations {
     register: {
       title: string
       patientId: string
+      patientIdHint: string
       name: string
       age: string
       sex: string
@@ -62,6 +63,8 @@ export interface Translations {
       emptyHint: string
       inProgress: string
       noMemo: string
+      compareSelected: string
+      compareSelectAria: string
     }
     detail: {
       notFound: string

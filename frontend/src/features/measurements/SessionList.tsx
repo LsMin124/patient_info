@@ -106,7 +106,9 @@ export function SessionList({ patientId }: SessionListProps) {
             hand. See post-Phase-4 security review note.
           */}
           <Link to={`/sessions/compare?ids=${[...selected].sort((a, b) => a - b).join(',')}`}>
-            <Button>{`선택한 ${selected.size}개 비교`}</Button>
+            <Button>
+              {t('session.list.compareSelected').replace('{count}', String(selected.size))}
+            </Button>
           </Link>
         </nav>
       )}
@@ -130,7 +132,10 @@ function SessionRow({ patientId, session, isSelected, onToggle }: SessionRowProp
         type="checkbox"
         checked={isSelected}
         onChange={onToggle}
-        aria-label={`세션 ${session.measurementId} 비교 선택`}
+        aria-label={t('session.list.compareSelectAria').replace(
+          '{id}',
+          String(session.measurementId),
+        )}
         className="session-list__check"
       />
       <Link
