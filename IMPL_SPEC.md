@@ -1560,3 +1560,48 @@ Phase 7 (T30/T31/T32/T33 backend hardening) 머지 후 typescript + java + secur
 - **CORS `allowedMethods` 에 PUT/DELETE 추가 여부** — 본 phase의 frozen contract는 GET/POST만 사용. Phase 8에서 새 엔드포인트 도입 시 같이 확장.
 - **422 핸들러는 현재 unreachable code** — `@Valid` + Bean Validation 어노테이션이 dto에 없음. Phase 8 polish에서 `CreatePatientSchema` 와 동치인 backend `PatientDto` 어노테이션을 추가하면 핸들러가 활성화됨.
 - 이전 carry-over (TanStack mutation signal, ESLint typed-aware rules, backend `GET /api/v1/measurements/:id`, SessionList href patientId 노출, SessionList 잔존 하드코드 ko 한글) 모두 그대로 이월.
+
+---
+
+## 8.12 Plan Review v8 (post-Phase-8, 2026-05-18) — FINAL
+
+Phase 8 (T34/T35/T36 — docs + CI + cutover) 머지 후 typescript + java + security 3-trio 최종 감사. 본 review가 v2.0 release readiness 의 마지막 게이트.
+
+### 8.12.1 적용된 fix
+
+| Severity | 영역 | 내용 |
+|---|---|---|
+| HIGH | i18n | SessionList의 "선택한 N개 비교" 버튼 라벨 + 체크박스 aria-label, PatientRegisterForm의 patientId hint 등 잔존 ko 한글 3건을 i18n으로 migration. `session.list.compareSelected`, `session.list.compareSelectAria`, `patient.register.patientIdHint` 신설 (`{count}`/`{id}` 간이 치환). 영어 locale에서 더이상 한글 노출 없음 (스크린리더 a11y 회귀 차단 포함) |
+| HIGH | backend | `Patient.patientId` 에 `@Column(unique=true)` 추가 — 동시 POST race로 인한 duplicate 행 생성 차단. 이미 GlobalExceptionHandler가 DataIntegrityViolation → 409로 매핑하므로 추가 변경 없이 정상 동작 |
+| HIGH | backend | `MeasurementService` 의 모든 read 메서드에 `@Transactional(readOnly=true)` 명시 — Hibernate dirty-check skip / flush skip 최적화 활성화 |
+| MEDIUM | backend | 중복된 method-level `@Transactional` (saveDataPoints / stopMeasurement / createPatient) 제거 — 클래스 default와 일치하므로 노이즈만 추가했음 |
+| MEDIUM | backend | `Collectors.toList()` → `.toList()` (Java 17 immutable form) — `import java.util.stream.Collectors` 도 함께 제거 |
+| MEDIUM | backend | `GlobalExceptionHandler.handleEntityNotFound` 도 다른 핸들러와 동일하게 `ex.getMessage()` 대신 클래스명만 로그 (내부 스키마 노출 차단) |
+| MEDIUM | backend | `MeasurementRepository` 의 dead `Limit` import, `DataPointRepository` 의 dead `DataPointDto` import 제거 |
+| MEDIUM | backend | `MeasurementController.startMeasurements` 의 stale 주석 (`{ measurement_id }` 소문자) → `{ measurement_Id }` (대문자 I, 동결 컨트랙트 일치) 수정 |
+| LOW | CI | `ubuntu-latest` floating tag 노트 + first-party action SHA pin 권장 사항은 단일-노드 클리닉 LAN 배포의 trust 모델 하에 acceptable trade-off (외부 contributor 없음). 변경 없음, 의사결정만 기록 |
+| LOW | docs | top-level `README.md` 가 API 명세만 담고 있던 형태 → 프로젝트 entrypoint 형태로 리뉴얼 (한눈에 보기 / 문서 안내 / 빠른 시작 / 검증 게이트 / 보안 메모). 기존 API 명세는 `docs/API.md` 로 분리 |
+
+### 8.12.2 항목별 carry-over (v2 / 운영자 / 영구)
+
+| 항목 | 분류 | 상태 |
+|---|---|---|
+| 자격증명 로테이션 (`<legacy>/<legacy>`) | 운영자 작업 | `docs/RUNBOOK.html §3` 가 절차 박제. 코드 fallback 없음 (T30) + .example shim 분리 (§8.11). git 히스토리는 영구. |
+| Backend `GET /api/v1/measurements/:id` | v2 endpoint | SessionCompare 4-환자 cap의 정공법 해결. 카운터에 주석 박제. |
+| TanStack Query mutation signal 통일 | v2 / dev ergonomics | useMutation onSuccess + 콜사이트 콜백 split-brain 문제. 현재 functional, 미래 multi-consumer 시 footgun. |
+| ESLint typed-aware rules | dev ergonomics | parserOptions.project 미설정. 사이드 이펙트 lint rule 비활성. |
+| SessionList href 의 raw patientId | 운영자 instruction | 라우팅에 필수. piiMaskHint 가 인쇄 시 헤더/푸터 OFF 안내. |
+| CORS `allowedMethods` PUT/DELETE 확장 | v2 | 현재 사용 엔드포인트 없음. 추가 시 함께. |
+| 422 handler unreachable | v2 (DTO @Valid 도입 시 활성화) | 핸들러는 대기, validation 어노테이션 도입 시 자동 동작. |
+| Backend entity-on-wire (H1) | v2 refactor | `Patient` 엔티티가 직접 직렬화됨. contract 테스트가 필드를 lock하므로 누설 즉시 빨강. 구조적으로는 DTO로 분리하는 게 깔끔하나 v2 scope. |
+| `ddl-auto=update` | v2 (Flyway/Liquibase 마이그레이션 도입 시) | 임상 환경에서는 단점이 명확하나 단일-노드 + git 관리 schema 진화로는 동작 중. |
+
+### 8.12.3 완성 선언
+
+- **백엔드**: 22 backend tests green, sanitized envelope 박제, fail-fast 자격증명, unique constraint.
+- **프론트엔드**: 235 frontend tests green, 6 locale + PII + print 게이트 통과, 한글 잔존 0건.
+- **빌드/배포**: gradle build 통과, bootJar 가 SPA 패키징, GitHub Actions CI 운영.
+- **문서**: README/RUNBOOK/PROGRESS_REPORT HTML + API/RUNBOOK MD mirror.
+- **carry-over**: 모두 v2 또는 운영자 작업으로 분류, ship에 영향 없음.
+
+**프로젝트 v2.0 완성 (`v2.0-final` 태그).**

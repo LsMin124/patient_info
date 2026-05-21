@@ -41,6 +41,7 @@ export const en: Translations = {
     register: {
       title: 'Register patient',
       patientId: 'Patient ID',
+      patientIdHint: 'Letters / digits / - / _ only, 1–32 chars',
       name: 'Name',
       age: 'Age',
       sex: 'Sex',
@@ -60,6 +61,8 @@ export const en: Translations = {
       emptyHint: 'Start a measurement from the device to populate this list.',
       inProgress: 'Measurement in progress',
       noMemo: 'No memo',
+      compareSelected: 'Compare selected ({count})',
+      compareSelectAria: 'Select session {id} for comparison',
     },
     detail: {
       notFound: 'Session not found',

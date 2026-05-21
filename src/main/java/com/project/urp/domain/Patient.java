@@ -14,7 +14,12 @@ public class Patient {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // 환자 고유 ID (PK)
 
-    @Column(nullable = false)
+    // DB-level UNIQUE so concurrent POSTs that pass the application-level
+    // duplicate check both attempt to commit — one succeeds, the other gets
+    // DataIntegrityViolationException → 409 via GlobalExceptionHandler.
+    // Without this, two near-simultaneous registrations of the same external
+    // patientId would silently create duplicate rows (post-Phase-8 review H4).
+    @Column(nullable = false, unique = true)
     private String patientId; // 앱에서 사용할 환자 ID (예: "p001")
 
     @Column(nullable = false)

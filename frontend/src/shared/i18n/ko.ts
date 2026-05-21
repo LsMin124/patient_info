@@ -41,6 +41,7 @@ export const ko: Translations = {
     register: {
       title: '신규 환자 등록',
       patientId: '환자 ID',
+      patientIdHint: '문자/숫자/-/_ 만, 1–32자',
       name: '이름',
       age: '나이',
       sex: '성별',
@@ -60,6 +61,8 @@ export const ko: Translations = {
       emptyHint: '디바이스로 첫 측정을 진행해 보세요.',
       inProgress: '측정 진행 중',
       noMemo: '메모 없음',
+      compareSelected: '선택한 {count}개 비교',
+      compareSelectAria: '세션 {id} 비교 선택',
     },
     detail: {
       notFound: '세션을 찾을 수 없습니다',

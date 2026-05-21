@@ -17,11 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional // class default = read/write. Read paths override with readOnly=true.
 public class MeasurementService {
 
     private final MeasurementRepository measurementRepository;
@@ -29,6 +28,7 @@ public class MeasurementService {
     private final DataPointRepository dataPointRepository;
 
     // 환자 목록 조회
+    @Transactional(readOnly = true)
     public List<Patient> findAllPatients() {
         return patientRepository.findAll();
     }
@@ -48,8 +48,9 @@ public class MeasurementService {
         return measurementRepository.save(measurement);
     }
 
-    // 데이터 일괄저장 (Flutter -> DB, JSON 리스트)
-    @Transactional
+    // 데이터 일괄저장 (Flutter -> DB, JSON 리스트). Inherits class-level
+    // @Transactional (read/write) — explicit method-level annotation removed
+    // to avoid redundancy noise (post-Phase-8 review H3).
     public void saveDataPoints(Long measurementId, List<Map<String, Object>> dataList) {
         Measurement measurement = measurementRepository.findById(measurementId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid measurement Id: " + measurementId));
@@ -82,12 +83,11 @@ public class MeasurementService {
                     }
                     return new DataPoint(measurement, timeOffset.intValue(), kgValue.doubleValue());
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         dataPointRepository.saveAll(dataPoints); // List를 db에 모두 저장
     }
 
-    @Transactional
     public void stopMeasurement(Long measurementId) {
         Measurement measurement = measurementRepository.findById(measurementId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid measurement Id: " + measurementId));
@@ -96,6 +96,7 @@ public class MeasurementService {
         measurementRepository.save(measurement);
     }
 
+    @Transactional(readOnly = true)
     public List<MeasurementSummaryDto> findMeasurementByPatient(String patientId) {
         patientRepository.findByPatientId(patientId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid patient Id: " + patientId));
@@ -104,9 +105,10 @@ public class MeasurementService {
 
         return measurements.stream()
                 .map(measurement -> new MeasurementSummaryDto(measurement))
-                .collect(Collectors.toList());
+                .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<DataPointDto> findDataPointsByMeasurement(Long measurementId) {
         if (!measurementRepository.existsById(measurementId)) {
             throw new IllegalArgumentException("Invalid measurement Id: " + measurementId);
@@ -116,10 +118,9 @@ public class MeasurementService {
 
         return dataPoints.stream()
                 .map(dp -> new DataPointDto(dp.getTimeOffsetMs(), dp.getKgValue()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
-    @Transactional
     public Patient createPatient(PatientDto patientDto) {
         // (선택적) 환자 ID 중복 검사
         patientRepository.findByPatientId(patientDto.getPatientId()).ifPresent(p -> {

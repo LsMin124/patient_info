@@ -1,134 +1,87 @@
-# API 명세서
+# patientInfo
 
-## 🔑 기본 정보
+> 환자 근력측정 디바이스의 임상 모니터링 웹.
+> Spring Boot 3.5.7 (Java 17) + React 19 / Vite 6 SPA. 클리닉 LAN 내부 배포 전제.
 
-* **Base URL**: `/api/v1`
-* **Content-Type**: `application/json`
-
----
-
-## 1. 환자 (Patient) API
-
-### 1.1. 모든 환자 목록 조회
-
-* **Endpoint**: `GET /api/v1/patients`
-* **설명**: 시스템에 등록된 모든 환자 정보를 조회합니다.
-* **요청 (Request)**:
-    * (없음)
-* **응답 (Response)**: `200 OK`
-    * **Body**: `List<Patient>`
-    * **예시**:
-        ```json
-        [
-          { "id": "p001", "name": "이승민", "age": 25 },
-          { "id": "p002", "name": "김철수", "age": 42 }
-        ]
-        ```
+[![CI](https://github.com/LsMin124/patient_info/actions/workflows/ci.yml/badge.svg)](https://github.com/LsMin124/patient_info/actions/workflows/ci.yml)
 
 ---
 
-## 2. 측정 (Measurement) API
+## 한눈에 보기
 
-### 2.1. 측정 세션 시작
+- **백엔드** — `src/main/java/com/project/urp/` — JPA 엔티티 3개 (Patient / Measurement / DataPoint),
+  단일 컨트롤러, 단일 서비스, `@RestControllerAdvice` 기반 sanitized 에러 envelope.
+- **프론트엔드** — `frontend/` — TypeScript strict, TanStack Query, Zod 와이어 검증, Chart.js,
+  Vitest + MSW 테스트, Locale/Theme/PiiMask Provider 스택.
+- **빌드** — `./gradlew build` 한 번으로 SPA 빌드 → `src/main/resources/static/`에 동기화 → bootJar에 패키징.
+- **동결 와이어 컨트랙트** — `measurement_Id` (대문자 I), 인제스트는 snake_case, 응답은 camelCase, **인증 없음**.
+  디바이스 펌웨어/Flutter 앱과 합의된 형태이므로 절대 깨면 안 됨. 자세히는
+  [`WEB_REBUILD_PLAN.md §3`](WEB_REBUILD_PLAN.md).
 
-* **Endpoint**: `POST /api/v1/measurements/start`
-* **설명**: 새로운 측정 세션을 생성하고 시작합니다.
-* **요청 (Request)**:
-    * **Body**: `Map<String, String>` (측정을 수행할 환자 ID 포함)
-    * **예시**:
-        ```json
-        {
-          "patientId": "p001"
-        }
-        ```
-* **응답 (Response)**: `200 OK`
-    * **Body**: `Map<String, Long>` (생성된 측정 세션의 고유 ID)
-    * **예시**:
-        ```json
-        {
-          "measurement_Id": 123
-        }
-        ```
+## 문서 안내
 
-### 2.2. 측정 데이터 저장 (일괄)
+| 대상 | 문서 | 비고 |
+|---|---|---|
+| 처음 보는 사람 | [`docs/README.html`](docs/README.html) | 프로젝트 개요·기능·구조·실행 가이드 (HTML) |
+| 운영자 | [`docs/RUNBOOK.html`](docs/RUNBOOK.html) | 배포·자격증명 로테이션·트러블슈팅 (HTML) |
+| AI / dev 검색용 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | RUNBOOK의 텍스트 미러 |
+| 진행 상황 | [`docs/PROGRESS_REPORT.html`](docs/PROGRESS_REPORT.html) | phase별 마일스톤 시각화 |
+| 디바이스 API 명세 | [`docs/API.md`](docs/API.md) | 동결 와이어 컨트랙트 (디바이스/앱 합의분) |
+| 구현 명세 + 리뷰 trail | [`IMPL_SPEC.md`](IMPL_SPEC.md) | §8 = phase별 review 결과 |
+| 전략 / 결정 | [`WEB_REBUILD_PLAN.md`](WEB_REBUILD_PLAN.md) | §3 = 동결 컨트랙트 본문 |
+| phase 리뷰 체크리스트 | [`docs/PHASE_REVIEW.md`](docs/PHASE_REVIEW.md) | 매 phase 종료 시 다중 리뷰어 호출 절차 |
 
-* **Endpoint**: `POST /api/v1/measurements/{id}/data`
-* **설명**: `2.1`에서 발급받은 `measurement_Id`에 해당하는 세션에 실제 측정 데이터(센서 값 등)를 리스트 형태로 일괄 저장합니다.
-* **요청 (Request)**:
-    * **Path Variable**: `id` (측정 세션 ID, 예: `123`)
-    * **Body**: `List<Map<String, Object>>` (데이터 포인트의 리스트)
-    * **예시**:
-        ```json
-        [
-           { "time_offset_ms": 10, "kg_value": 1.98 },
-           { "time_offset_ms": 20, "kg_value": 2.12 },
-           { "time_offset_ms": 30, "kg_value": 2.14 },
-        ]
-        ```
-* **응답 (Response)**: `200 OK`
-    * (Body 없음)
+> 사람 대상 문서는 HTML로, AI/grep 대상 문서는 Markdown으로 — 두 형태가 의도적으로 분리되어 있습니다.
 
-### 2.3. 측정 세션 종료
+## 빠른 시작 (로컬 dev)
 
-* **Endpoint**: `POST /api/v1/measurements/{id}/stop`
-* **설명**: `2.1`에서 시작한 측정 세션을 종료 상태로 변경합니다.
-* **요청 (Request)**:
-    * **Path Variable**: `id` (측정 세션 ID, 예: `123`)
-* **응답 (Response)**: `200 OK`
-    * (Body 없음)
+```bash
+# 1) 로컬 dev 자격증명 파일 (gitignored) 만들기 — 단 한 번
+cp src/main/resources/application-dev.properties.example \
+   src/main/resources/application-dev.properties
+# REPLACE_WITH_LOCAL_DB_USER / _PASSWORD 두 줄을 본인 MariaDB에 맞게 수정
 
----
+# 2) 프론트 dev 서버 (Vite, HMR, http://localhost:5173)
+cd frontend
+corepack pnpm@9.15.9 install
+corepack pnpm@9.15.9 dev
 
-## 3. 조회 API
+# 3) 백엔드 (dev 프로파일)
+JAVA_HOME=$HOME/.local/jdks/jdk-17.0.13+11 PATH=$JAVA_HOME/bin:$PATH \
+SPRING_PROFILES_ACTIVE=dev \
+./gradlew bootRun -PskipFrontend=true
 
-### 3.1. 특정 환자의 측정 이력 조회
+# 4) 풀빌드 = CI 동일 게이트 (TSC / lint / vitest / vite build + gradle test + bootJar)
+JAVA_HOME=$HOME/.local/jdks/jdk-17.0.13+11 PATH=$JAVA_HOME/bin:$PATH \
+./gradlew build
+```
 
-* **Endpoint**: `GET /api/v1/patients/{patientId}/measurements`
-* **설명**: 특정 환자가 수행한 모든 측정 세션의 **요약 정보** 목록을 조회합니다. (예: 측정 날짜, 세션 ID)
-* **요청 (Request)**:
-    * **Path Variable**: `patientId` (환자 ID, 예: `p001`)
-* **응답 (Response)**: `200 OK`
-    * **Body**: `List<MeasurementSummaryDto>`
-    * **예시**:
-        ```json
-        [
-          { "measurementId": 123, "date": "2025-11-01T10:30:00" },
-          { "measurementId": 124, "date": "2025-11-02T14:15:00" }
-        ]
-        ```
+**운영 환경**(=dev 프로파일 아님)은 `DB_URL`/`DB_USERNAME`/`DB_PASSWORD` env 변수가 반드시 필요합니다.
+fallback이 제거되어 미설정 시 부팅이 실패합니다 — 의도된 fail-fast 보호 (Phase 7 T30).
 
-### 3.2. 특정 측정 세션의 상세 데이터 조회
+## 검증 게이트
 
-* **Endpoint**: `GET /api/v1/measurements/{id}/data`
-* **설명**: 특정 측정 세션(`id`)에 `2.2`를 통해 저장된 모든 **상세 데이터(DataPoint)**를 조회합니다.
-* **요청 (Request)**:
-    * **Path Variable**: `id` (측정 세션 ID, 예: `123`)
-* **응답 (Response)**: `200 OK`
-    * **Body**: `List<DataPointDto>`
-    * **예시**:
-        ```json
-        [
-          [
-           {
-             "timeOffsetMs": 0,
-             "kgValue": 0
-           },
-           {
-             "timeOffsetMs": 49,
-             "kgValue": 0
-           },
-           {
-             "timeOffsetMs": 103,
-             "kgValue": 0.00917744591680136
-           },
-           {
-             "timeOffsetMs": 165,
-             "kgValue": 0.375255566375878
-           },
-           {
-             "timeOffsetMs": 214,
-             "kgValue": 1.2980987391209
-           },
-          ...
-        ]
-        ```
+| 게이트 | 명령 | 통과 기준 |
+|---|---|---|
+| 프론트 타입 | `pnpm tsc` | 0 errors |
+| 프론트 lint | `pnpm lint` | 0 errors / 0 warnings |
+| 프론트 format | `pnpm exec prettier --check .` | clean |
+| 프론트 테스트 | `pnpm test` | 235/235 (Vitest + MSW) |
+| 프론트 번들 | `pnpm build` | ~165 KB gzipped |
+| 백엔드 빌드+테스트 | `./gradlew build` | 22/22 (h2 contract tests) |
+| 전체 CI | `.github/workflows/ci.yml` | 푸시·PR마다 자동 실행 |
+
+## 보안 / PII 메모
+
+- **자격증명 로테이션 필수** — 레거시 `<legacy>/<legacy>` 가 git 히스토리에 평문으로 영구히 박혀 있습니다.
+  코드 fallback은 Phase 7에서 제거되었지만, 같은 비밀번호를 쓰는 DB 인스턴스가 있다면 즉시 로테이션이 필요합니다.
+  절차는 [`docs/RUNBOOK.html §3`](docs/RUNBOOK.html).
+- **에러 envelope sanitization** — 모든 4xx/5xx 응답은 `{ status, error, timestamp }` 형태로,
+  exception 메시지·request path·patient ID 가 절대 노출되지 않습니다.
+- **PII 마스킹 토글** — 설정 페이지(`/settings`)에서 환자 이름/ID 마스킹을 켜면 시연/스크린샷/인쇄에 안전.
+  브라우저 인쇄 시에는 다이얼로그의 "머리글/바닥글"도 OFF 해야 URL에 환자 ID가 노출되지 않음.
+
+## 라이선스
+
+이 저장소는 임상 환경 단일-노드 배포를 목적으로 작성된 사내 사용 코드입니다.
+외부 공개 시에는 동결 컨트랙트와 보안 carry-over (특히 자격증명 로테이션)를 반드시 먼저 처리하세요.
