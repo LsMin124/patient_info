@@ -93,3 +93,28 @@ jobs:
             build/reports/tests/test/
             build/test-results/test/
           retention-days: 7
+
+  deploy:
+    name: Deploy to Fly.io (demo)
+    # Only deploy on main push, never on PRs (which run against forks).
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [frontend, backend]
+    runs-on: ubuntu-latest
+    # Single in-flight deploy at a time per app — flyctl serializes anyway,
+    # but this prevents two GitHub runs from racing on the same release tag.
+    concurrency:
+      group: fly-deploy-patient-info-demo
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy
+        run: flyctl deploy --remote-only --wait-timeout 300
+        env:
+          # Required GitHub Secret. Create with:
+          #   fly tokens create deploy --app patient-info-demo --expiry 8760h
+          # then add to repo Settings → Secrets and variables → Actions.
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

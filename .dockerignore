@@ -1,0 +1,43 @@
+# Keep build context small and prevent leaking the dev MariaDB credentials
+# from src/main/resources/application-dev.properties into the image.
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Build outputs
+.gradle/
+build/
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/playwright-report/
+frontend/test-results/
+frontend/*.tsbuildinfo
+# Pre-existing static bundle is regenerated inside the image.
+src/main/resources/static/
+
+# Local-only Spring profile (gitignored too) — never bake the local DB creds.
+src/main/resources/application-dev.properties
+src/main/resources/application-local.properties
+
+# Editor / IDE
+.idea/
+.vscode/
+.iml
+*.iws
+
+# OS / logs / misc
+.DS_Store
+*.log
+node_modules
+npm-debug.log*
+
+# Project planning + reviewer artefacts — not needed for runtime image
+docs/
+*.md
+!README.md
+
+# CI workflows
+.github/

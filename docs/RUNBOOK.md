@@ -62,3 +62,42 @@ Restore: `gunzip -c <file>.sql.gz | mariadb patientinfo`.
 
 ## 8. Rollback
 Swap jar symlink / systemd ExecStart back, restart, re-run health checks. `ddl-auto=update` only adds columns; destructive schema changes need a manual migration script.
+
+## 9. Fly.io demo deployment (Phase 9)
+**Demo only — NO real PII.** Frozen contract has no auth; anyone who finds the URL can forge measurements. Internal testing / live demos only.
+
+### 9.1 One-time setup
+1. `curl -L https://fly.io/install.sh | sh` then `fly auth login`
+2. `fly apps create patient-info-demo --org personal` (update `fly.toml` `app` if the name is taken)
+3. Postgres: `fly postgres create --name patient-info-demo-db --region nrt --vm-size shared-cpu-1x --volume-size 1` then `fly postgres attach patient-info-demo-db --app patient-info-demo`
+4. Map Fly's `DATABASE_URL` (postgres://...) into our `DB_URL` (jdbc:postgresql://...) via `fly secrets set DB_URL=... DB_USERNAME=postgres DB_PASSWORD=...`
+5. `fly secrets set CORS_ALLOWED_ORIGINS=https://patient-info-demo.fly.dev`
+6. CI auto-deploy: `fly tokens create deploy --app patient-info-demo --expiry 8760h` → add as GitHub `FLY_API_TOKEN` secret
+
+### 9.2 First manual deploy
+```bash
+fly deploy --remote-only
+fly status && fly logs
+open https://patient-info-demo.fly.dev
+```
+
+### 9.3 Subsequent deploys
+Auto on `git push origin main` via `.github/workflows/ci.yml` `deploy` job (after frontend + backend gates pass). Manual deploy with the command above is always available.
+
+### 9.4 Cost / shutdown
+| Action | Command | Cost |
+|---|---|---|
+| Idle (auto-sleep) | none — `auto_stop_machines = "stop"` in `fly.toml` | ~$0 idle, <$2/mo with demo traffic |
+| Full off | `fly scale count 0 --app patient-info-demo` | $0 (Postgres volume only) |
+| Postgres off too | `fly machine stop --app patient-info-demo-db <id>` | $0 (volume storage only, ~$0.15/GB/mo) |
+| Destroy everything | `fly postgres destroy patient-info-demo-db` then `fly apps destroy patient-info-demo` | $0 |
+
+Enable usage alerts at fly.io/dashboard → Billing → Usage Alerts ($5/$10 thresholds) as a safety net.
+
+### 9.5 Troubleshooting
+| Symptom | Cause | Action |
+|---|---|---|
+| health check 60s timeout → restart loop | Postgres handshake + Hibernate ddl-auto too slow | raise `grace_period` to 90s in `fly.toml`, redeploy |
+| API 503, SPA loads | missing/malformed DB secret | `fly secrets list`; verify `DB_URL` starts with `jdbc:postgresql://` |
+| ~10s cold start | auto-stop wake-up | normal; `curl` once before a demo to warm |
+| Actions deploy `failed to fetch` | `FLY_API_TOKEN` missing/expired | regenerate via 9.1#6 and update GitHub secret |
