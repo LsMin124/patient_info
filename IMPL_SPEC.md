@@ -1168,6 +1168,7 @@ Phase 5  [x] T28
 Phase 6  [x] T29
 Phase 7  [x] T30  [x] T31  [x] T32  [x] T33
 Phase 8  [x] T34  [x] T35  [x] T36
+Phase 9  [x] T37  [x] T38  [x] T39  [x] T40  [x] T41
 ```
 
 ---
@@ -1605,3 +1606,33 @@ Phase 8 (T34/T35/T36 — docs + CI + cutover) 머지 후 typescript + java + sec
 - **carry-over**: 모두 v2 또는 운영자 작업으로 분류, ship에 영향 없음.
 
 **프로젝트 v2.0 완성 (`v2.0-final` 태그).**
+
+---
+
+## 8.13 Phase 9 — Fly.io 데모 배포 (2026-05-21)
+
+Pi 호스팅 불안정성을 이유로 인터넷 PaaS 데모 환경으로 갈아탐. 사용자가 "실 PII 없음, 시연 전용, 보안은 obscurity-based" 로 명시 → 인증/CSP/HSTS 추가는 본 phase 범위 밖.
+
+### 8.13.1 추가된 산출물
+
+| Task | 영역 | 내용 |
+|---|---|---|
+| T37 | DB swap | `build.gradle` 에 `org.postgresql:postgresql` 추가 (MariaDB 드라이버 유지 — dev profile 호환). `application.properties` 에서 driver-class-name / dialect 하드코드 제거 (Hibernate 6 auto-detect). `application-test.properties` h2 mode `MySQL` → `PostgreSQL`. 21 backend tests 그대로 그린. |
+| T38 | container | 멀티스테이지 `Dockerfile` (node:20 → temurin-17-jdk → temurin-17-jre), `.dockerignore` (build/node_modules/dev properties/docs/ci 제외). 비-root 유저 (uid 10001) 실행. JAVA_TOOL_OPTIONS 에 MaxRAMPercentage=75 + ExitOnOutOfMemoryError. |
+| T39 | Fly.io | `fly.toml` Tokyo (nrt) 리전, shared-cpu-1x / 1 GB, auto_stop_machines="stop" (비용 가드), health check on `/api/v1/patients` grace 60s. |
+| T40 | CI | `.github/workflows/ci.yml` 에 `deploy` job 추가 — main push 시에만, frontend + backend job 통과 후 `flyctl deploy --remote-only`. `FLY_API_TOKEN` GitHub Secret 필요. concurrency group으로 동시 deploy 차단. |
+| T41 | docs | `RUNBOOK.html §9` + `RUNBOOK.md §9` (1회 셋업 / 첫 배포 / 자동 배포 / 비용 끄기 / 트러블슈팅). `README.md` 데모 배포 섹션. |
+
+### 8.13.2 운영자 수동 단계 (Phase 9 carry-over)
+
+- `flyctl` 설치 + `fly auth login`
+- `fly apps create patient-info-demo` + Fly Postgres 어태치 + `fly secrets set DB_URL/DB_USERNAME/DB_PASSWORD/CORS_ALLOWED_ORIGINS`
+- `fly tokens create deploy` → GitHub repo secret `FLY_API_TOKEN`
+- 첫 배포 수동: `fly deploy --remote-only`
+- 그 이후는 main push 시 자동
+- 시연 끝나면 `fly scale count 0` (또는 완전 삭제: `fly postgres destroy && fly apps destroy`)
+
+### 8.13.3 보안 트레이드오프 (수용)
+
+- 인증 없음 + 인터넷 노출 → 누구나 `/api/v1/measurements/start` 호출 가능. 임상 무결성 측면에서 사실상 불가능하지만 사용자가 "실 PII 없음 + obscurity 기반" 으로 명시. 실 배포 전환 시 본 결정 재검토 필요.
+- DB password git history 잔존 carry-over (§8.11) 는 여전히 별개. Fly Postgres 는 새 자격증명을 발급하므로 직접 영향 없음.

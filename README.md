@@ -71,6 +71,18 @@ fallback이 제거되어 미설정 시 부팅이 실패합니다 — 의도된 f
 | 백엔드 빌드+테스트 | `./gradlew build` | 22/22 (h2 contract tests) |
 | 전체 CI | `.github/workflows/ci.yml` | 푸시·PR마다 자동 실행 |
 
+## 데모 배포 (Fly.io)
+
+Phase 9에서 추가된 인터넷 데모용 환경. **실 PII 절대 금지** — 동결 컨트랙트에 인증이 없어 URL을 아는 누구나 환자 등록/측정 데이터 위조가 가능합니다. 시연/내부 테스트 외 용도 불가.
+
+- **URL**: `https://patient-info-demo.fly.dev` (초기 `fly apps create` 단계에서 이름이 충돌하면 `fly.toml` + 이 줄을 같이 갱신)
+- **호스팅**: Fly.io Tokyo (nrt) 리전, shared-cpu-1x / 1 GB, auto-stop 활성 → 대기 시 ~$0
+- **DB**: Fly Managed Postgres (별도 머신, 1 GB 볼륨)
+- **자동 배포**: main push → GitHub Actions `deploy` job → `flyctl deploy --remote-only` (FLY_API_TOKEN 시크릿 필요)
+- **수동 종료**: `fly scale count 0 --app patient-info-demo` (완전 OFF, $0)
+
+상세 절차/트러블슈팅: [`docs/RUNBOOK.html §9`](docs/RUNBOOK.html#fly) (또는 [`docs/RUNBOOK.md §9`](docs/RUNBOOK.md)).
+
 ## 보안 / PII 메모
 
 - **자격증명 로테이션 필수** — 레거시 `<legacy>/<legacy>` 가 git 히스토리에 평문으로 영구히 박혀 있습니다.

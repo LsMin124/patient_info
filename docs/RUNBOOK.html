@@ -144,6 +144,7 @@
     <li><a href="#trouble">트러블슈팅</a></li>
     <li><a href="#backup">백업 / 복구</a></li>
     <li><a href="#rollback">롤백</a></li>
+    <li><a href="#fly">Fly.io 데모 배포 (Phase 9)</a></li>
   </ol>
 </nav>
 
@@ -325,8 +326,119 @@ curl -i http://&lt;host&gt;:8080/api/v1/patients/__noop__/measurements
   <p>스키마 마이그레이션 (<code>ddl-auto=update</code>)이 비파괴적으로 동작하므로 컬럼 추가 정도는 롤백 안전. 컬럼 삭제·rename 같은 파괴적 변경은 별도 마이그레이션 스크립트 + 백업 후 시도.</p>
 </section>
 
+<section id="fly">
+  <h2>9. Fly.io 데모 배포 (Phase 9)</h2>
+  <div class="callout warn">
+    <strong>데모 전용.</strong> 실 환자 PII를 절대 올리지 마세요.
+    인증 계층이 없는 동결 컨트랙트가 그대로 인터넷에 노출됩니다 — URL을 아는 누구나
+    환자 등록/측정 데이터 위조가 가능합니다. 시연/내부 테스트 외 용도로 쓰면 안 됩니다.
+  </div>
+
+  <h3>9.1 사전 준비 (한 번만)</h3>
+  <ol>
+    <li><strong>flyctl 설치 + 로그인</strong>:
+      <pre><code>curl -L https://fly.io/install.sh | sh
+fly auth signup   # 또는 fly auth login</code></pre>
+    </li>
+    <li><strong>앱 생성</strong> (이름은 전역 unique — 충돌 시 <code>fly.toml</code> 의 <code>app</code> 항목과 README 데모 URL 같이 갱신):
+      <pre><code>fly apps create patient-info-demo --org personal</code></pre>
+    </li>
+    <li><strong>Fly Managed Postgres 생성 + 어태치</strong>:
+      <pre><code>fly postgres create --name patient-info-demo-db --region nrt \
+  --vm-size shared-cpu-1x --volume-size 1
+fly postgres attach patient-info-demo-db --app patient-info-demo</code></pre>
+      어태치 시 Fly가 <code>DATABASE_URL</code> 시크릿을 주입합니다. 우리 앱은 <code>DB_URL</code>을 읽으므로 매핑:
+      <pre><code>fly secrets set --app patient-info-demo \
+  DB_URL=$(fly ssh console --app patient-info-demo -C 'printenv DATABASE_URL' | tr -d '\r' | sed 's|^postgres://|jdbc:postgresql://|') \
+  DB_USERNAME=postgres \
+  DB_PASSWORD=&lt;Fly가-출력한-비밀번호&gt;</code></pre>
+      (또는 더 간단히 <code>fly postgres attach</code> 출력의 <code>DATABASE_URL</code> 을 직접 복사해 <code>DB_URL</code> 시크릿에 JDBC 형태로 set.)
+    </li>
+    <li><strong>CORS 시크릿</strong> — SPA가 같은 origin에서 서빙되므로 빈 값이어도 동작합니다:
+      <pre><code>fly secrets set --app patient-info-demo \
+  CORS_ALLOWED_ORIGINS=https://patient-info-demo.fly.dev</code></pre>
+    </li>
+    <li><strong>GitHub Actions 자동 배포용 토큰</strong>:
+      <pre><code>fly tokens create deploy --app patient-info-demo --expiry 8760h
+# 출력된 토큰을 GitHub repo Settings → Secrets and variables → Actions →
+# New repository secret → FLY_API_TOKEN 에 등록</code></pre>
+    </li>
+  </ol>
+
+  <h3>9.2 첫 수동 배포</h3>
+  <pre><code>fly deploy --remote-only
+# Fly가 Dockerfile 빌드(원격 builder) → 컨테이너 푸시 → 머신 1대 기동 → health check
+fly status         # 머신 상태 확인
+fly logs           # 부팅 로그 (Spring Boot 부팅 + Hibernate ddl-auto 스키마 생성)
+open https://patient-info-demo.fly.dev   # 헬스체크 통과 후 SPA 접속</code></pre>
+
+  <h3>9.3 이후 배포</h3>
+  <p>
+    main 브랜치에 push 하면 <code>.github/workflows/ci.yml</code> 의 <code>deploy</code> job이
+    frontend/backend gates 통과 후 자동으로 <code>flyctl deploy --remote-only</code> 를 실행합니다.
+    수동 배포는 위 9.2 명령으로 언제든 가능.
+  </p>
+
+  <h3>9.4 비용 / 끄기 (시연 끝나면)</h3>
+  <table>
+    <thead><tr><th>상황</th><th>명령</th><th>예상 비용</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>일시 정지 (트래픽 없으면 자동 sleep)</td>
+        <td>변경 없음 — <code>fly.toml</code> 의 <code>auto_stop_machines = "stop"</code> 이 처리</td>
+        <td>대기 중 ~$0, 요청 들어올 때만 과금 (월 ~$2 미만)</td>
+      </tr>
+      <tr>
+        <td>완전히 OFF (대기 인스턴스 0)</td>
+        <td><code>fly scale count 0 --app patient-info-demo</code></td>
+        <td>$0 (Postgres 볼륨 보관료만)</td>
+      </tr>
+      <tr>
+        <td>Postgres까지 정지</td>
+        <td><code>fly machine stop --app patient-info-demo-db &lt;machine-id&gt;</code></td>
+        <td>$0 (볼륨 보관료만, GB당 월 $0.15)</td>
+      </tr>
+      <tr>
+        <td>완전 삭제 (모든 데이터 영구 손실)</td>
+        <td><code>fly postgres destroy patient-info-demo-db<br>fly apps destroy patient-info-demo</code></td>
+        <td>$0</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    Fly 콘솔(<a href="https://fly.io/dashboard">fly.io/dashboard</a>)에서 Billing → Usage Alerts 를 켜두면 월 $5/$10 등 임계 도달 시 메일이 옵니다. 데모 트래픽 기준으로는 거의 들어올 일이 없지만 안전장치로 권장.
+  </p>
+
+  <h3>9.5 트러블슈팅</h3>
+  <table>
+    <thead><tr><th>증상</th><th>원인</th><th>조치</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>health check 60s 안에 200 안 옴 → 머신 재시작 루프</td>
+        <td>Postgres 첫 연결 + Hibernate ddl-auto 가 grace 안에 못 끝남</td>
+        <td><code>fly logs</code> 확인 후 <code>fly.toml</code> 의 <code>grace_period</code> 를 90s 로 늘려 재배포</td>
+      </tr>
+      <tr>
+        <td>SPA는 뜨는데 API가 503</td>
+        <td>DB 시크릿 미설정 또는 잘못된 JDBC URL</td>
+        <td><code>fly secrets list</code> 로 <code>DB_URL</code> 존재 확인. <code>jdbc:postgresql://...</code> prefix 누락이 가장 흔한 실수</td>
+      </tr>
+      <tr>
+        <td>cold start 가 느림 (~10s)</td>
+        <td>auto-stop 후 첫 요청 — Spring Boot 부팅 시간</td>
+        <td>정상 동작. 시연 직전에 <code>curl https://...fly.dev</code> 로 미리 깨워두면 됨</td>
+      </tr>
+      <tr>
+        <td>GitHub Actions deploy job 실패: <code>Error: failed to fetch</code></td>
+        <td><code>FLY_API_TOKEN</code> 시크릿 미설정 또는 만료</td>
+        <td>9.1 단계 5의 토큰 재발급 후 GitHub secret 갱신</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
 <footer>
-  patientInfo · RUNBOOK v1.0 · Phase 8 · 2026-05-18 · 마지막 검토자: 운영팀
+  patientInfo · RUNBOOK v1.1 · Phase 9 · 2026-05-21 · 마지막 검토자: 운영팀
 </footer>
 
 </main>
