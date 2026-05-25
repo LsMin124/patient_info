@@ -1,0 +1,116 @@
+.comparison-figure {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18rem;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+@media (max-width: 880px) {
+  .comparison-figure {
+    grid-template-columns: 1fr;
+  }
+}
+
+.comparison-figure__chart {
+  height: 26rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+@media (max-width: 600px) {
+  .comparison-figure__chart {
+    height: 18rem;
+  }
+}
+
+.comparison-figure__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.comparison-figure__peak-row {
+  display: grid;
+  grid-template-columns: 1rem 1fr auto;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.comparison-figure__swatch {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  display: inline-block;
+}
+
+.comparison-figure__swatch--dashed {
+  background: transparent !important;
+  border-style: dashed;
+}
+
+.comparison-figure__peak-label {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.comparison-figure__peak-date {
+  color: var(--color-fg-muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.comparison-figure__peak-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.comparison-figure__delta {
+  padding: var(--space-4) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid currentColor;
+  text-align: center;
+  background: var(--color-surface);
+}
+
+.comparison-figure__delta-label {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  color: var(--color-fg-muted);
+  margin-bottom: var(--space-1);
+}
+
+.comparison-figure__delta-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.comparison-figure__delta-word {
+  font-size: 0.85rem;
+  color: var(--color-fg-muted);
+  margin-top: var(--space-1);
+}
+
+/* Direction colouring — uses currentColor on the border so the box
+   outline matches the headline number. */
+.comparison-figure__delta--up {
+  color: oklch(48% 0.16 150);
+}
+
+.comparison-figure__delta--down {
+  color: oklch(55% 0.21 25);
+}
+
+.comparison-figure__delta--flat {
+  color: var(--color-fg-muted);
+}

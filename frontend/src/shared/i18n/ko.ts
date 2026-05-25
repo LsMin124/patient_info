@@ -86,6 +86,16 @@ export const ko: Translations = {
         impulse: '면적 (N·s)',
       },
     },
+    figure: {
+      title: '내원 간 비교',
+      baseline: '기존',
+      followup: '추적',
+      peak: '피크',
+      deltaPeak: 'ΔPeak',
+      improvement: '개선',
+      regression: '감소',
+      unchanged: '변화 없음',
+    },
     chart: {
       forceLabel: '힘 (N)',
       timeLabel: '시간 (s)',

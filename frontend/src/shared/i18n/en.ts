@@ -85,6 +85,16 @@ export const en: Translations = {
         impulse: 'Impulse (N·s)',
       },
     },
+    figure: {
+      title: 'Visit-to-visit comparison',
+      baseline: 'Baseline',
+      followup: 'Follow-up',
+      peak: 'Peak',
+      deltaPeak: 'ΔPeak',
+      improvement: 'improvement',
+      regression: 'regression',
+      unchanged: 'unchanged',
+    },
     chart: {
       forceLabel: 'Force (N)',
       timeLabel: 'Time (s)',

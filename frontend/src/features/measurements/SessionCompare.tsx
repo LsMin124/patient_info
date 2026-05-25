@@ -9,6 +9,7 @@ import { ErrorFallback } from '../../shared/ui/ErrorFallback'
 import { Skeleton } from '../../shared/ui/Loading'
 import { usePatientsQuery } from '../patients/usePatients'
 
+import { ComparisonFigure } from './ComparisonFigure'
 import { OverlayChart, paletteColor, type OverlaySeries } from './OverlayChart'
 import { countValidIdSegments, MAX_COMPARE_IDS, parseCompareIds } from './lib/compareIds'
 import { computeSessionStats } from './lib/stats'
@@ -188,6 +189,10 @@ function CompareLoader({
       peak: number | null
       impulse: number | null
     }> = []
+    const pairCandidates: Array<{
+      meta: MeasurementSummary
+      points: ReadonlyArray<DataPoint>
+    }> = []
     ids.forEach((id, i) => {
       const points = (dataQueries[i]?.data ?? []) as ReadonlyArray<DataPoint>
       const meta = sessionsAll.find((s) => s.measurementId === id)
@@ -201,8 +206,26 @@ function CompareLoader({
         peak: stats.peakN,
         impulse: stats.impulseNs,
       })
+      if (meta) pairCandidates.push({ meta, points })
     })
-    return { series: seriesOut, rows: rowsOut }
+    // Figure pair: only when exactly two sessions and BOTH have resolved
+    // metadata + non-empty data. Baseline = earlier startTime.
+    let figurePair: {
+      baseline: (typeof pairCandidates)[number]
+      followup: (typeof pairCandidates)[number]
+    } | null = null
+    if (
+      ids.length === 2 &&
+      pairCandidates.length === 2 &&
+      pairCandidates[0]!.points.length > 0 &&
+      pairCandidates[1]!.points.length > 0
+    ) {
+      const sorted = [...pairCandidates].sort((a, b) =>
+        a.meta.startTime.localeCompare(b.meta.startTime),
+      )
+      figurePair = { baseline: sorted[0]!, followup: sorted[1]! }
+    }
+    return { series: seriesOut, rows: rowsOut, figurePair }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ids, data0Ref, data1Ref, data2Ref, data3Ref, sessionsKey])
 
@@ -232,6 +255,16 @@ function CompareLoader({
         }}
         title={t('common.error')}
       />
+    )
+  }
+
+  // Figure mode: exactly 2 sessions selected AND both metas resolved.
+  // Renders a deliberately minimal "paper figure" layout — overlay of the
+  // two curves with peak markers + a headline ΔPeak panel. No stats table
+  // (multi-overlay 3-4 path below keeps it).
+  if (ids.length === 2 && built.figurePair) {
+    return (
+      <ComparisonFigure baseline={built.figurePair.baseline} followup={built.figurePair.followup} />
     )
   }
 

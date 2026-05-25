@@ -46,7 +46,9 @@ describe('SessionCompare', () => {
     expect(await screen.findByText('Up to 4 sessions can be compared at once')).toBeInTheDocument()
   })
 
-  it('renders chart + comparison table on valid ids', async () => {
+  it('renders multi-overlay chart + comparison table when 3+ valid ids', async () => {
+    // ids.length === 2 triggers the dedicated figure mode (covered below).
+    // The multi-overlay table path activates from 3 ids up.
     server.use(
       http.get('/api/v1/measurements/:id/data', ({ params }) =>
         HttpResponse.json([
@@ -56,26 +58,59 @@ describe('SessionCompare', () => {
       ),
     )
 
-    renderAt('?ids=101,102')
+    renderAt('?ids=101,102,103')
     expect(await screen.findByTestId('overlay-chart')).toBeInTheDocument()
     const table = await screen.findByRole('table')
     const rows = within(table).getAllByRole('row')
-    // header + 2 data rows
-    expect(rows).toHaveLength(3)
+    // header + 3 data rows
+    expect(rows).toHaveLength(4)
     // peak column for id=101 → (101+5)*9.80665 = 106*9.80665 = 1039.5049
     expect(within(rows[1]!).getByText('1039.50 N')).toBeInTheDocument()
   })
 
-  it('drops invalid segments silently and still renders if 2+ valid remain', async () => {
+  it('drops invalid segments silently and still renders if 3+ valid remain', async () => {
     server.use(
       http.get('/api/v1/measurements/:id/data', () =>
         HttpResponse.json([{ timeOffsetMs: 0, kgValue: 1 }]),
       ),
     )
-    renderAt('?ids=abc,101,-5,102')
+    renderAt('?ids=abc,101,-5,102,103')
     expect(await screen.findByTestId('overlay-chart')).toBeInTheDocument()
     const rows = within(await screen.findByRole('table')).getAllByRole('row')
-    expect(rows).toHaveLength(3) // header + 2
+    expect(rows).toHaveLength(4) // header + 3
+  })
+
+  it('renders figure mode (ΔPeak panel, no stats table) when exactly 2 valid ids', async () => {
+    // peak kgf: 101 → 6, 102 → 8 ; baseline=earlier (101 by startTime), follow-up=later (102).
+    // ΔPeak in N: (8 - 6) * 9.80665 = 19.6133 → expect "+19.6 N" with "+33.3%"
+    server.use(
+      http.get('/api/v1/measurements/:id/data', ({ params }) =>
+        HttpResponse.json(
+          Number(params.id) === 101
+            ? [
+                { timeOffsetMs: 0, kgValue: 0 },
+                { timeOffsetMs: 500, kgValue: 6 },
+                { timeOffsetMs: 1000, kgValue: 0 },
+              ]
+            : [
+                { timeOffsetMs: 0, kgValue: 0 },
+                { timeOffsetMs: 600, kgValue: 8 },
+                { timeOffsetMs: 1200, kgValue: 0 },
+              ],
+        ),
+      ),
+    )
+
+    renderAt('?ids=101,102')
+    // figure-mode chart still uses react-chartjs-2 (mocked → overlay-chart testid)
+    expect(await screen.findByTestId('overlay-chart')).toBeInTheDocument()
+    // No multi-overlay stats table in figure mode
+    expect(screen.queryByRole('table')).toBeNull()
+    // Headline ΔPeak + percent
+    expect(await screen.findByText('+19.6 N (+33.3%)')).toBeInTheDocument()
+    // Baseline/follow-up labels both present
+    expect(screen.getByText('Baseline')).toBeInTheDocument()
+    expect(screen.getByText('Follow-up')).toBeInTheDocument()
   })
 
   it('surfaces error fallback when a session data fetch fails', async () => {

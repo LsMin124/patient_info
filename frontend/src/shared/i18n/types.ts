@@ -87,6 +87,16 @@ export interface Translations {
         impulse: string
       }
     }
+    figure: {
+      title: string
+      baseline: string
+      followup: string
+      peak: string
+      deltaPeak: string
+      improvement: string
+      regression: string
+      unchanged: string
+    }
     chart: {
       forceLabel: string
       timeLabel: string
