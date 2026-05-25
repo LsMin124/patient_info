@@ -1,18 +1,156 @@
 .comparison-figure {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 18rem;
-  gap: var(--space-4);
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
-@media (max-width: 880px) {
-  .comparison-figure {
+/* Hero strip — full-width band at the top of each figure card.
+   Grid: left = big delta block, right = baseline → followup peak strip.
+   Stack on narrow viewports. */
+.comparison-figure__hero {
+  display: grid;
+  grid-template-columns: minmax(11rem, auto) 1fr;
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid currentColor;
+  background: var(--color-surface);
+  /* currentColor used by border + hero numbers — set per-direction below. */
+}
+
+@media (max-width: 720px) {
+  .comparison-figure__hero {
     grid-template-columns: 1fr;
   }
 }
 
+.comparison-figure__hero--up {
+  color: oklch(45% 0.16 150);
+  background: linear-gradient(90deg, oklch(96% 0.04 150) 0%, var(--color-surface) 55%);
+}
+
+.comparison-figure__hero--down {
+  color: oklch(52% 0.21 25);
+  background: linear-gradient(90deg, oklch(96% 0.05 25) 0%, var(--color-surface) 55%);
+}
+
+.comparison-figure__hero--flat {
+  color: var(--color-fg-muted);
+}
+
+.comparison-figure__hero-delta {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+  column-gap: 0.6rem;
+  align-items: baseline;
+}
+
+.comparison-figure__hero-arrow {
+  font-size: 2.2rem;
+  line-height: 1;
+  grid-row: 1;
+  grid-column: 1;
+}
+
+.comparison-figure__hero-pct {
+  font-size: 3.4rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  grid-row: 1;
+  grid-column: 2;
+}
+
+.comparison-figure__hero-word {
+  grid-row: 2;
+  grid-column: 1 / span 2;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  font-size: 0.78rem;
+  margin-top: 0.35rem;
+  opacity: 0.9;
+}
+
+.comparison-figure__hero-peaks {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+@media (max-width: 560px) {
+  .comparison-figure__hero-peaks {
+    grid-template-columns: 1fr;
+  }
+  .comparison-figure__hero-peak-arrow,
+  .comparison-figure__hero-delta-n {
+    justify-self: start;
+  }
+}
+
+.comparison-figure__hero-peak {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.comparison-figure__hero-peak--followup {
+  text-align: right;
+}
+
+@media (max-width: 560px) {
+  .comparison-figure__hero-peak--followup {
+    text-align: left;
+  }
+}
+
+.comparison-figure__hero-peak-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--color-fg-muted);
+}
+
+.comparison-figure__hero-peak-value {
+  font-size: 1.55rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.015em;
+  color: var(--color-fg);
+}
+
+.comparison-figure__hero-peak-date {
+  font-size: 0.78rem;
+  color: var(--color-fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.comparison-figure__hero-peak-arrow {
+  font-size: 1.6rem;
+  line-height: 1;
+  color: currentColor;
+  justify-self: center;
+}
+
+.comparison-figure__hero-delta-n {
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: currentColor;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-pill);
+}
+
+/* Chart container — full-width below the hero. Increased height since the
+   side panel is gone and the chart is the main proof. */
 .comparison-figure__chart {
-  height: 26rem;
+  height: 28rem;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -21,139 +159,6 @@
 
 @media (max-width: 600px) {
   .comparison-figure__chart {
-    height: 18rem;
+    height: 22rem;
   }
-}
-
-.comparison-figure__panel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.comparison-figure__peak-row {
-  display: grid;
-  grid-template-columns: 1rem 1fr auto;
-  gap: var(--space-2);
-  align-items: center;
-  padding: var(--space-2) var(--space-3);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-}
-
-.comparison-figure__swatch {
-  width: 0.9rem;
-  height: 0.9rem;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  display: inline-block;
-}
-
-.comparison-figure__swatch--dashed {
-  background: transparent !important;
-  border-style: dashed;
-}
-
-.comparison-figure__peak-label {
-  font-weight: 600;
-  font-size: 0.95rem;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-/* Flexion / extension pair label inside the peak row. See IMPL_SPEC §8.14. */
-.comparison-figure__pair {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 1px 6px;
-  border: 1px solid currentColor;
-  border-radius: 999px;
-}
-.comparison-figure__pair--flexion {
-  color: oklch(48% 0.13 250);
-}
-.comparison-figure__pair--extension {
-  color: oklch(48% 0.15 30);
-}
-
-.comparison-figure__peak-date {
-  color: var(--color-fg-muted);
-  font-size: 0.8rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.comparison-figure__peak-value {
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-.comparison-figure__delta {
-  padding: var(--space-4) var(--space-3);
-  border-radius: var(--radius-md);
-  border: 1px solid currentColor;
-  text-align: center;
-  background: var(--color-surface);
-}
-
-.comparison-figure__delta-label {
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-size: 0.75rem;
-  color: var(--color-fg-muted);
-  margin-bottom: var(--space-1);
-}
-
-.comparison-figure__delta-headline {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 0.4rem;
-  margin-top: var(--space-1);
-}
-
-.comparison-figure__delta-arrow {
-  font-size: 1.6rem;
-  line-height: 1;
-}
-
-.comparison-figure__delta-percent {
-  font-size: 2.5rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.03em;
-  line-height: 1;
-}
-
-.comparison-figure__delta-newton {
-  font-size: 1rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--color-fg-muted);
-  margin-top: var(--space-1);
-}
-
-.comparison-figure__delta-word {
-  font-size: 0.85rem;
-  color: var(--color-fg-muted);
-  margin-top: var(--space-1);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-/* Direction colouring — uses currentColor on the border so the box
-   outline matches the headline number. */
-.comparison-figure__delta--up {
-  color: oklch(48% 0.16 150);
-}
-
-.comparison-figure__delta--down {
-  color: oklch(55% 0.21 25);
-}
-
-.comparison-figure__delta--flat {
-  color: var(--color-fg-muted);
 }
