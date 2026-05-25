@@ -36,10 +36,13 @@ RUN chmod +x ./gradlew \
 FROM eclipse-temurin:17-jre-jammy AS runtime
 # Non-root for runtime hygiene even though the Fly.io container is short-lived.
 RUN useradd --system --create-home --uid 10001 spring
-USER spring
 WORKDIR /home/spring
 COPY --from=backend --chown=spring:spring /app/app.jar /home/spring/app.jar
+# Bridge Fly's DATABASE_URL → DB_URL/DB_USERNAME/DB_PASSWORD (libpq → JDBC).
+# See docker/entrypoint.sh for the rationale (bootJar META-INF/spring quirk).
+COPY --chown=spring:spring --chmod=0755 docker/entrypoint.sh /home/spring/entrypoint.sh
+USER spring
 # Defaults set here; Fly.io overrides via fly secrets (DB_*, CORS_ALLOWED_ORIGINS).
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75 -XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError"
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/home/spring/app.jar"]
+ENTRYPOINT ["/home/spring/entrypoint.sh"]
