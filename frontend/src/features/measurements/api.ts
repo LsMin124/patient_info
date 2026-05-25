@@ -3,6 +3,7 @@ import { httpGet } from '../../shared/lib/http'
 import {
   DataPointListSchema,
   MeasurementListSchema,
+  MeasurementSummarySchema,
   type DataPoint,
   type MeasurementSummary,
 } from './schema'
@@ -37,6 +38,25 @@ export function getDataPoints(measurementId: number, signal?: AbortSignal): Prom
   return httpGet(
     `/api/v1/measurements/${encodeURIComponent(String(measurementId))}/data`,
     DataPointListSchema,
+    opts,
+  )
+}
+
+/**
+ * GET /api/v1/measurements/{id} — single session summary by measurementId,
+ * across all patients. Used by the compare flow so it can resolve metadata
+ * for ids in the URL without scanning every patient's session list (the
+ * previous implementation was capped at 4 patients due to rules-of-hooks,
+ * which silently broke patient #5+ — see IMPL_SPEC §8.9 carry-over).
+ */
+export function getMeasurementSummary(
+  measurementId: number,
+  signal?: AbortSignal,
+): Promise<MeasurementSummary> {
+  const opts = signal ? { signal } : {}
+  return httpGet(
+    `/api/v1/measurements/${encodeURIComponent(String(measurementId))}`,
+    MeasurementSummarySchema,
     opts,
   )
 }

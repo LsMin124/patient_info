@@ -64,6 +64,16 @@ public class MeasurementController {
         return ResponseEntity.ok(dataPoints);
     }
 
+    // Single-measurement metadata lookup. Used by the SPA's compare flow
+    // so it can resolve metadata for ids belonging to ANY patient without
+    // scanning every patient's session list (previous design had a hard
+    // cap at 4 patients because of React rules-of-hooks).
+    @GetMapping("/measurements/{id}")
+    public ResponseEntity<MeasurementSummaryDto> getMeasurementById(
+            @PathVariable("id") Long measurementId) {
+        return ResponseEntity.ok(measurementService.findMeasurementById(measurementId));
+    }
+
     /**
      * (POST /api/v1/patients) 새 환자 등록
      */

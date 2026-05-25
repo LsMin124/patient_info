@@ -108,6 +108,16 @@ public class MeasurementService {
                 .toList();
     }
 
+    // Single-measurement lookup by id — used by the compare flow so the
+    // frontend doesn't have to scan every patient's session list just to
+    // resolve metadata for an arbitrary measurementId in a URL.
+    @Transactional(readOnly = true)
+    public MeasurementSummaryDto findMeasurementById(Long measurementId) {
+        Measurement m = measurementRepository.findById(measurementId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid measurement Id: " + measurementId));
+        return new MeasurementSummaryDto(m);
+    }
+
     @Transactional(readOnly = true)
     public List<DataPointDto> findDataPointsByMeasurement(Long measurementId) {
         if (!measurementRepository.existsById(measurementId)) {

@@ -110,4 +110,30 @@ class ReadApiContractTest extends ApiContractTestBase {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
     }
+
+    @Test
+    @DisplayName("GET /measurements/{id} returns the single summary with camelCase keys")
+    void getMeasurementById_returnsCamelCaseSummary() throws Exception {
+        Patient p = seedPatient("p001", "테스트환자A");
+        Measurement m = seedMeasurement(p, "single");
+        m.setEndTime(LocalDateTime.now());
+        measurementRepository.save(m);
+
+        mockMvc.perform(get("/api/v1/measurements/" + m.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.measurementId").value(m.getId()))
+                .andExpect(jsonPath("$.startTime").isString())
+                .andExpect(jsonPath("$.startTime", org.hamcrest.Matchers.matchesPattern(ISO_LOCAL_DATE_TIME_REGEX)))
+                .andExpect(jsonPath("$.endTime").exists())
+                .andExpect(jsonPath("$.memo").value("single"));
+    }
+
+    @Test
+    @DisplayName("GET /measurements/{id} returns 404 for unknown measurement id")
+    void getMeasurementById_unknownId_returns404() throws Exception {
+        // GlobalExceptionHandler maps IllegalArgumentException → 404 to keep the
+        // contract identical to /patients/{id}/measurements for unknown ids.
+        mockMvc.perform(get("/api/v1/measurements/999999"))
+                .andExpect(status().isNotFound());
+    }
 }

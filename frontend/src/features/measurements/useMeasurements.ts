@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 
-import { getDataPoints, listSessions } from './api'
+import { getDataPoints, getMeasurementSummary, listSessions } from './api'
 import type { DataPoint, MeasurementSummary } from './schema'
 
 /**
@@ -10,11 +10,14 @@ import type { DataPoint, MeasurementSummary } from './schema'
  */
 export const sessionsKey = (patientId: string) => ['sessions', patientId] as const
 export const dataPointsKey = (measurementId: number) => ['dataPoints', measurementId] as const
+export const measurementSummaryKey = (measurementId: number) =>
+  ['measurementSummary', measurementId] as const
 
 // Distinct sentinel keys for the disabled state so cache writes never
 // collide with a hypothetical real patientId === '' or measurementId === -1.
 const DISABLED_SESSIONS_KEY = ['sessions', '__disabled__'] as const
 const DISABLED_DATA_KEY = ['dataPoints', '__disabled__'] as const
+const DISABLED_SUMMARY_KEY = ['measurementSummary', '__disabled__'] as const
 
 export function useSessionsQuery(patientId: string | undefined) {
   return useQuery<MeasurementSummary[], Error>({
@@ -32,6 +35,20 @@ export function useDataPointsQuery(measurementId: number | undefined) {
     enabled,
     // Force samples never change once a session is stopped; keep them
     // fresh for the whole session so re-visiting a chart is instant.
+    staleTime: 5 * 60_000,
+  })
+}
+
+/**
+ * Single measurement summary by id — used in the compare flow so an id in
+ * the URL can be resolved to its metadata without scanning every patient.
+ */
+export function useMeasurementSummaryQuery(measurementId: number | undefined) {
+  const enabled = typeof measurementId === 'number' && measurementId > 0
+  return useQuery<MeasurementSummary, Error>({
+    queryKey: enabled ? measurementSummaryKey(measurementId as number) : DISABLED_SUMMARY_KEY,
+    queryFn: ({ signal }) => getMeasurementSummary(measurementId as number, signal),
+    enabled,
     staleTime: 5 * 60_000,
   })
 }

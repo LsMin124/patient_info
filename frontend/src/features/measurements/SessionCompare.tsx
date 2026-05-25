@@ -7,7 +7,6 @@ import { Button } from '../../shared/ui/Button'
 import { EmptyState } from '../../shared/ui/EmptyState'
 import { ErrorFallback } from '../../shared/ui/ErrorFallback'
 import { Skeleton } from '../../shared/ui/Loading'
-import { usePatientsQuery } from '../patients/usePatients'
 
 import { ComparisonFigure } from './ComparisonFigure'
 import { OverlayChart, paletteColor, type OverlaySeries } from './OverlayChart'
@@ -17,7 +16,7 @@ import { pairMotionForIndex, type PairMotion } from './lib/pairLabel'
 import { computeSessionStats } from './lib/stats'
 import { pickVisitPairFromIds } from './lib/visits'
 import type { DataPoint, MeasurementSummary } from './schema'
-import { useDataPointsQuery, useSessionsQuery } from './useMeasurements'
+import { useDataPointsQuery, useMeasurementSummaryQuery } from './useMeasurements'
 
 import './session-compare.css'
 
@@ -80,7 +79,7 @@ export function SessionCompare() {
 
   return (
     <Shell title={t('session.compare.title')}>
-      <CompareBody ids={ids} />
+      <CompareLoader ids={ids} />
     </Shell>
   )
 }
@@ -94,47 +93,11 @@ function Shell({ title, children }: { title: string; children: ReactNode }) {
   )
 }
 
-interface CompareBodyProps {
-  ids: ReadonlyArray<number>
-}
-
-function CompareBody({ ids }: CompareBodyProps) {
-  const patientsQuery = usePatientsQuery()
-  // We don't yet know which patient(s) the requested ids belong to. For
-  // Phase 5 the patient list is small enough to probe up to the first 4
-  // — see CompareLoader's hard cap comment. A future API revision
-  // (GET /api/v1/measurements/:id) would let us drop this scan entirely.
-  const allSessionsByPatient = (patientsQuery.data ?? []).map((p) => p.patientId)
-
-  return (
-    <CompareLoader
-      ids={ids}
-      patientIds={allSessionsByPatient}
-      patientsLoading={patientsQuery.isLoading}
-      patientsError={patientsQuery.error}
-      patientsHasData={!!patientsQuery.data}
-      onRetry={() => patientsQuery.refetch()}
-    />
-  )
-}
-
 interface CompareLoaderProps {
   ids: ReadonlyArray<number>
-  patientIds: ReadonlyArray<string>
-  patientsLoading: boolean
-  patientsError: Error | null
-  patientsHasData: boolean
-  onRetry: () => void
 }
 
-function CompareLoader({
-  ids,
-  patientIds,
-  patientsLoading,
-  patientsError,
-  patientsHasData,
-  onRetry,
-}: CompareLoaderProps) {
+function CompareLoader({ ids }: CompareLoaderProps) {
   const { t } = useT()
   // Fetch each id's data points + meta. Hooks must be called in stable
   // order, so cap is enforced (parseCompareIds returns at most
@@ -146,34 +109,27 @@ function CompareLoader({
   const data3 = useDataPointsQuery(slots[3])
   const dataQueries = [data0, data1, data2, data3]
 
-  // Sessions metadata across patients — same hook-order discipline as the
-  // data slots above. Phase 5 caps at 4 patient slots because rules-of-hooks
-  // forbids variable-length useQuery sequences; a clinic with > 4 patients
-  // will see correct chart curves but missing memo/timestamp labels for
-  // sessions owned by patient #5+.
-  //   Carry-over: Phase 6 / v2 should add `GET /api/v1/measurements/:id`
-  //   so we can fetch session metadata by measurementId directly and drop
-  //   this whole patient-scan pattern. Tracked in IMPL_SPEC §8.9 carry-over.
-  const psSlots = [0, 1, 2, 3].map((i) => patientIds[i])
-  const sessionsP0 = useSessionsQuery(psSlots[0])
-  const sessionsP1 = useSessionsQuery(psSlots[1])
-  const sessionsP2 = useSessionsQuery(psSlots[2])
-  const sessionsP3 = useSessionsQuery(psSlots[3])
-  const sessionsAll: MeasurementSummary[] = (
-    [sessionsP0, sessionsP1, sessionsP2, sessionsP3] as const
-  ).flatMap((q) => q.data ?? [])
+  // Per-measurement metadata. Resolves the id directly regardless of
+  // which patient owns it — replaces the previous patient-scan that was
+  // capped at 4 patients (IMPL_SPEC §8.9 carry-over). Patient #5+ now
+  // gets the same hero comparison as everyone else.
+  const meta0 = useMeasurementSummaryQuery(slots[0])
+  const meta1 = useMeasurementSummaryQuery(slots[1])
+  const meta2 = useMeasurementSummaryQuery(slots[2])
+  const meta3 = useMeasurementSummaryQuery(slots[3])
+  const metaQueries = [meta0, meta1, meta2, meta3]
+  const sessionsAll: MeasurementSummary[] = metaQueries
+    .map((q) => q.data)
+    .filter((m): m is MeasurementSummary => !!m)
 
   const anyLoading =
-    patientsLoading ||
     dataQueries.slice(0, ids.length).some((q) => q.isLoading) ||
-    [sessionsP0, sessionsP1, sessionsP2, sessionsP3]
-      .slice(0, patientIds.length)
-      .some((q) => q.isLoading)
+    metaQueries.slice(0, ids.length).some((q) => q.isLoading)
 
   // Per-query error precedence (matches SessionDetail): only fallback
   // when data is actually missing (no stale cache to render).
-  const patientMissing = !patientsHasData && !!patientsError
   const anyDataMissing = dataQueries.slice(0, ids.length).some((q) => !q.data && q.isError)
+  const anyMetaMissing = metaQueries.slice(0, ids.length).some((q) => !q.data && q.isError)
 
   // Build chart series + table rows up-front (memoized). useMemo must be
   // called unconditionally — rules-of-hooks forbids hooks after the
@@ -182,6 +138,10 @@ function CompareLoader({
   const data1Ref = data1.data
   const data2Ref = data2.data
   const data3Ref = data3.data
+  const meta0Ref = meta0.data
+  const meta1Ref = meta1.data
+  const meta2Ref = meta2.data
+  const meta3Ref = meta3.data
   const sessionsKey = sessionsAll.length
   const built = useMemo(() => {
     const seriesOut: OverlaySeries[] = []
@@ -243,7 +203,18 @@ function CompareLoader({
     const visitPair = pickVisitPairFromIds(ids, sessionsAll)
     return { series: seriesOut, rows: rowsOut, figurePair, visitPair, dataByMid }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ids, data0Ref, data1Ref, data2Ref, data3Ref, sessionsKey])
+  }, [
+    ids,
+    data0Ref,
+    data1Ref,
+    data2Ref,
+    data3Ref,
+    meta0Ref,
+    meta1Ref,
+    meta2Ref,
+    meta3Ref,
+    sessionsKey,
+  ])
 
   if (anyLoading) {
     return (
@@ -258,14 +229,17 @@ function CompareLoader({
       </div>
     )
   }
-  if (patientMissing || anyDataMissing) {
-    const err = patientsError ?? dataQueries.find((q) => q.isError)?.error ?? null
+  if (anyDataMissing || anyMetaMissing) {
+    const err =
+      dataQueries.find((q) => q.isError)?.error ?? metaQueries.find((q) => q.isError)?.error ?? null
     return (
       <ErrorFallback
         error={err}
         onReset={() => {
-          if (patientMissing) onRetry()
           dataQueries.forEach((q) => {
+            if (q.isError) q.refetch()
+          })
+          metaQueries.forEach((q) => {
             if (q.isError) q.refetch()
           })
         }}

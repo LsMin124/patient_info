@@ -52,6 +52,26 @@ export const handlers = [
 
   http.get('/api/v1/patients/:patientId/measurements', () => HttpResponse.json(seedSessions)),
 
+  // Single-measurement metadata lookup. Returns the matching seedSessions
+  // entry when present; otherwise a synthetic placeholder so tests that
+  // don't pre-seed an id still resolve metadata (the compare flow needs
+  // it to render the hero figure).
+  http.get('/api/v1/measurements/:id', ({ params }) => {
+    const id = Number(params.id)
+    const seed = seedSessions.find((s) => s.measurementId === id)
+    if (seed) return HttpResponse.json(seed)
+    // Build a chronologically-distinct synthetic so two ids always sort
+    // into baseline/follow-up correctly inside ComparisonFigure.
+    const minute = String(id % 60).padStart(2, '0')
+    const second = String(Math.min(id, 59)).padStart(2, '0')
+    return HttpResponse.json({
+      measurementId: id,
+      startTime: `2026-05-01T10:${minute}:${second}`,
+      endTime: `2026-05-01T10:${minute}:${second}`,
+      memo: null,
+    } satisfies MeasurementSummary)
+  }),
+
   http.get('/api/v1/measurements/:id/data', () => HttpResponse.json(seedDataPoints)),
 ]
 
