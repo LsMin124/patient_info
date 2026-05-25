@@ -65,6 +65,9 @@ export interface Translations {
       noMemo: string
       compareSelected: string
       compareSelectAria: string
+      visitLabel: string
+      visitNeedExactlyTwoHint: string
+      partialVisit: string
     }
     detail: {
       notFound: string
@@ -96,6 +99,9 @@ export interface Translations {
       improvement: string
       regression: string
       unchanged: string
+      visitTitle: string
+      flexionSection: string
+      extensionSection: string
     }
     pair: {
       flexion: string

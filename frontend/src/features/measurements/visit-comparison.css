@@ -1,0 +1,43 @@
+.visit-comparison {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.visit-comparison__header h2 {
+  font-size: 1.35rem;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.visit-comparison__section {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+.visit-comparison__section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0 0 var(--space-3);
+  color: var(--color-fg-muted);
+}
+
+.visit-comparison__motion-dot {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  display: inline-block;
+}
+.visit-comparison__motion-dot--flexion {
+  background: oklch(48% 0.13 250);
+}
+.visit-comparison__motion-dot--extension {
+  background: oklch(48% 0.15 30);
+}

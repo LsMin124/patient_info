@@ -94,9 +94,10 @@ export function ComparisonFigure({ baseline, followup }: ComparisonFigureProps) 
           type: 'linear',
           min: 0,
           max: maxX,
+          bounds: 'ticks',
           title: { display: true, text: t('session.chart.timeLabel') },
           grid: { color: 'oklch(90% 0 0)' },
-          ticks: { callback: (v) => `${v}s` },
+          ticks: { stepSize: 1, callback: (v) => `${v}s` },
         },
         y: {
           beginAtZero: true,

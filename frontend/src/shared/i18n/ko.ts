@@ -56,13 +56,16 @@ export const ko: Translations = {
   },
   session: {
     list: {
-      title: '측정 세션',
+      title: '내원 기록',
       empty: '측정 기록이 없습니다.',
       emptyHint: '디바이스로 첫 측정을 진행해 보세요.',
       inProgress: '측정 진행 중',
       noMemo: '메모 없음',
-      compareSelected: '선택한 {count}개 비교',
-      compareSelectAria: '세션 {id} 비교 선택',
+      compareSelected: '선택한 {count}회 비교',
+      compareSelectAria: '내원 {id} 비교 선택',
+      visitLabel: '{n}회차 내원',
+      visitNeedExactlyTwoHint: '굴곡/신전을 같이 비교하려면 두 회차의 내원을 선택하세요.',
+      partialVisit: '굴곡만 측정',
     },
     detail: {
       notFound: '세션을 찾을 수 없습니다',
@@ -95,6 +98,9 @@ export const ko: Translations = {
       improvement: '개선',
       regression: '감소',
       unchanged: '변화 없음',
+      visitTitle: '{baseline}회차 → {followup}회차',
+      flexionSection: '굴곡',
+      extensionSection: '신전',
     },
     pair: {
       flexion: '굴곡',

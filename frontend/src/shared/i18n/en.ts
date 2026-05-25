@@ -56,13 +56,17 @@ export const en: Translations = {
   },
   session: {
     list: {
-      title: 'Sessions',
+      title: 'Visits',
       empty: 'No measurement sessions yet.',
       emptyHint: 'Start a measurement from the device to populate this list.',
       inProgress: 'Measurement in progress',
       noMemo: 'No memo',
       compareSelected: 'Compare selected ({count})',
-      compareSelectAria: 'Select session {id} for comparison',
+      compareSelectAria: 'Select visit {id} for comparison',
+      visitLabel: 'Visit {n}',
+      visitNeedExactlyTwoHint:
+        'Select exactly two visits to compare flexion and extension side by side.',
+      partialVisit: 'Flexion only',
     },
     detail: {
       notFound: 'Session not found',
@@ -94,6 +98,9 @@ export const en: Translations = {
       improvement: 'improvement',
       regression: 'regression',
       unchanged: 'unchanged',
+      visitTitle: 'Visit {baseline} → Visit {followup}',
+      flexionSection: 'Flexion',
+      extensionSection: 'Extension',
     },
     pair: {
       // Working assumption (until the device contract grows an explicit

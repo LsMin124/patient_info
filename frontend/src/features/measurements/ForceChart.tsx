@@ -80,8 +80,12 @@ export function ForceChart({ points }: ForceChartProps) {
           type: 'linear',
           min: 0,
           max: maxX,
+          // Lock to integer seconds 0–5 so the axis ends exactly at 5s,
+          // matching the comparison figure window.
+          bounds: 'ticks',
           title: { display: true, text: t('session.chart.timeLabel') },
           ticks: {
+            stepSize: 1,
             callback: (value) => `${value}s`,
           },
         },

@@ -33,22 +33,30 @@ const session = (over: Partial<MeasurementSummary>): MeasurementSummary => ({
 })
 
 describe('SessionList', () => {
-  it('renders sessions in startTime-descending order', async () => {
+  it('groups sessions into visits (flex+ext) and renders newest visit first', async () => {
+    // 4 sessions → 2 visits: visit 1 = (mid 1, mid 3), visit 2 = (mid 2, mid 4).
+    // Newest visit (visit 2) renders first. Each visit row exposes one
+    // checkbox + a link per motion side, so we expect 4 motion links total.
     server.use(
       http.get('/api/v1/patients/:patientId/measurements', () =>
         HttpResponse.json([
           session({ measurementId: 1, startTime: '2026-05-01T10:30:00' }),
+          session({ measurementId: 3, startTime: '2026-05-01T10:30:10' }),
           session({ measurementId: 2, startTime: '2026-05-03T09:00:00' }),
-          session({ measurementId: 3, startTime: '2026-05-02T14:15:00' }),
+          session({ measurementId: 4, startTime: '2026-05-03T09:00:10' }),
         ]),
       ),
     )
     render(wrap(<SessionList patientId="p001" />))
     const links = await screen.findAllByRole('link')
-    // first link goes to measurement 2 (newest), then 3, then 1
+    // Newest visit first: flex mid 2, ext mid 4 → then visit 1: flex mid 1, ext mid 3.
     expect(links[0]).toHaveAttribute('href', '/patients/p001/sessions/2')
-    expect(links[1]).toHaveAttribute('href', '/patients/p001/sessions/3')
+    expect(links[1]).toHaveAttribute('href', '/patients/p001/sessions/4')
     expect(links[2]).toHaveAttribute('href', '/patients/p001/sessions/1')
+    expect(links[3]).toHaveAttribute('href', '/patients/p001/sessions/3')
+    // Visit headings include "Visit 1" / "Visit 2"
+    expect(screen.getByText('Visit 2')).toBeInTheDocument()
+    expect(screen.getByText('Visit 1')).toBeInTheDocument()
   })
 
   it('renders an empty state when there are no sessions', async () => {
@@ -57,35 +65,57 @@ describe('SessionList', () => {
     expect(await screen.findByText('No measurement sessions yet.')).toBeInTheDocument()
   })
 
-  it('labels in-progress sessions (endTime null) with the warning badge', async () => {
+  it('labels in-progress motions inside a visit card with the warning badge', async () => {
     server.use(
       http.get('/api/v1/patients/:patientId/measurements', () =>
-        HttpResponse.json([session({ measurementId: 9, endTime: null, memo: null })]),
+        HttpResponse.json([
+          session({ measurementId: 9, endTime: null, memo: null }),
+          session({
+            measurementId: 10,
+            startTime: '2026-05-01T10:30:10',
+            endTime: null,
+            memo: null,
+          }),
+        ]),
       ),
     )
     render(wrap(<SessionList patientId="p001" />))
-    const link = await screen.findByRole('link')
-    expect(within(link).getByText('Measurement in progress')).toBeInTheDocument()
-    expect(within(link).getByText('No memo')).toBeInTheDocument()
+    const flexLink = await screen.findByRole('link', { name: /Flexion/ })
+    expect(within(flexLink).getByText('Measurement in progress')).toBeInTheDocument()
+    expect(within(flexLink).getByText('No memo')).toBeInTheDocument()
   })
 
-  it('shows a compare button once 2+ sessions are selected', async () => {
+  it('shows compare link once exactly 2 complete visits are selected', async () => {
     const user = userEvent.setup()
     server.use(
       http.get('/api/v1/patients/:patientId/measurements', () =>
         HttpResponse.json([
-          session({ measurementId: 5 }),
-          session({ measurementId: 7, startTime: '2026-05-02T10:30:00' }),
+          session({ measurementId: 5, startTime: '2026-05-01T10:30:00' }),
+          session({ measurementId: 6, startTime: '2026-05-01T10:30:10' }),
+          session({ measurementId: 7, startTime: '2026-05-03T10:30:00' }),
+          session({ measurementId: 8, startTime: '2026-05-03T10:30:10' }),
         ]),
       ),
     )
     render(wrap(<SessionList patientId="p001" />))
     const checks = await screen.findAllByRole('checkbox')
-    await user.click(checks[0]!)
+    // 2 visits, 2 checkboxes (1 per visit — not 1 per measurement)
+    expect(checks).toHaveLength(2)
+
+    // 0 selected → no compare, no hint
     expect(screen.queryByRole('link', { name: /Compare/ })).toBeNull()
+
+    // 1 visit selected → hint, but no compare link yet
+    await user.click(checks[0]!)
+    expect(
+      screen.getByText('Select exactly two visits to compare flexion and extension side by side.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Compare/ })).toBeNull()
+
+    // 2 visits selected → compare link with flex+ext ids of the older visit first
     await user.click(checks[1]!)
     const compare = screen.getByRole('link', { name: /Compare/ })
-    expect(compare).toHaveAttribute('href', '/sessions/compare?ids=5,7')
+    expect(compare).toHaveAttribute('href', '/sessions/compare?ids=5,6,7,8')
   })
 
   it('shows error fallback on API failure', async () => {

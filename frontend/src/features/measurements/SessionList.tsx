@@ -7,8 +7,7 @@ import { EmptyState } from '../../shared/ui/EmptyState'
 import { ErrorFallback } from '../../shared/ui/ErrorFallback'
 import { Skeleton } from '../../shared/ui/Loading'
 
-import { pairMotionForIndex, type PairMotion } from './lib/pairLabel'
-import type { MeasurementSummary } from './schema'
+import { groupIntoVisits, type Visit } from './lib/visits'
 import { useSessionsQuery } from './useMeasurements'
 
 import './session-list.css'
@@ -28,36 +27,22 @@ const dateFmt = new Intl.DateTimeFormat('ko-KR', {
 })
 
 /**
- * Per-patient session timeline. Reads from the cached useSessionsQuery and
- * renders sessions in startTime-descending order. In-progress sessions
- * (endTime === null) carry a visible "측정 진행 중" label and a different
- * accent so operators don't mistake them for finalized data — see
- * IMPL_SPEC §7.7.
- *
- * Multi-select state lives in this component; on confirm the user is
- * navigated to /sessions/compare?ids=... (Phase 5 T28 builds that page).
- * For now the compare button is rendered but routes to the placeholder.
+ * Per-patient visit timeline. Sessions are grouped into visits — flexion +
+ * extension as one clinical set (see IMPL_SPEC §8.14). Each visit card
+ * carries a single checkbox; selecting two visits navigates to
+ * /sessions/compare?ids=oldFlex,oldExt,newFlex,newExt which renders the
+ * paired figure (flex-vs-flex stacked over ext-vs-ext).
  */
 export function SessionList({ patientId }: SessionListProps) {
   const { t } = useT()
   const query = useSessionsQuery(patientId)
-  const [selected, setSelected] = useState<ReadonlySet<number>>(new Set())
+  const [selectedVisit, setSelectedVisit] = useState<ReadonlySet<number>>(new Set())
 
-  const sortedSessions = useMemo(() => {
-    const rows = query.data ?? []
-    return [...rows].sort((a, b) => b.startTime.localeCompare(a.startTime))
-  }, [query.data])
-
-  // Working-assumption pair labels: index measurements in chronological
-  // (ascending) order, even → flexion, odd → extension. See IMPL_SPEC §8.14
-  // future-work note — the device contract will eventually carry an
-  // explicit motion field and this map disappears.
-  const pairByMeasurementId = useMemo(() => {
-    const rows = query.data ?? []
-    const ascending = [...rows].sort((a, b) => a.startTime.localeCompare(b.startTime))
-    const m = new Map<number, PairMotion>()
-    ascending.forEach((s, i) => m.set(s.measurementId, pairMotionForIndex(i)))
-    return m
+  // Newest visit first for the UI. Order doesn't affect the visitNumber
+  // which is assigned chronologically by groupIntoVisits.
+  const visitsDesc = useMemo(() => {
+    const visits = groupIntoVisits(query.data ?? [])
+    return [...visits].sort((a, b) => b.visitNumber - a.visitNumber)
   }, [query.data])
 
   if (query.isLoading) {
@@ -68,8 +53,8 @@ export function SessionList({ patientId }: SessionListProps) {
         aria-live="polite"
         aria-label={t('common.loading')}
       >
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} height="3rem" />
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} height="4.5rem" />
         ))}
       </div>
     )
@@ -83,88 +68,137 @@ export function SessionList({ patientId }: SessionListProps) {
       />
     )
   }
-  if (sortedSessions.length === 0) {
+  if (visitsDesc.length === 0) {
     return <EmptyState title={t('session.list.empty')} description={t('session.list.emptyHint')} />
   }
 
-  const toggle = (id: number) => {
-    setSelected((prev) => {
+  const toggleVisit = (visitNumber: number) => {
+    setSelectedVisit((prev) => {
       const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
+      if (next.has(visitNumber)) next.delete(visitNumber)
+      else next.add(visitNumber)
       return next
     })
   }
 
+  const selectedComplete = [...selectedVisit]
+    .map((vn) => visitsDesc.find((v) => v.visitNumber === vn))
+    .filter((v): v is Visit => v !== undefined && v.extension !== null)
+  const canCompare = selectedComplete.length === 2
+  const idsForCompare = canCompare
+    ? selectedComplete
+        .sort((a, b) => a.visitNumber - b.visitNumber)
+        .flatMap((v) => [v.flexion.measurementId, v.extension!.measurementId])
+        .join(',')
+    : ''
+
   return (
     <section className="session-list" aria-label={t('session.list.title')}>
-      <ul className="session-list__rows">
-        {sortedSessions.map((s) => (
-          <SessionRow
-            key={s.measurementId}
+      <ul className="session-list__visits">
+        {visitsDesc.map((v) => (
+          <VisitCard
+            key={v.visitNumber}
             patientId={patientId}
-            session={s}
-            pair={pairByMeasurementId.get(s.measurementId) ?? 'flexion'}
-            isSelected={selected.has(s.measurementId)}
-            onToggle={() => toggle(s.measurementId)}
+            visit={v}
+            isSelected={selectedVisit.has(v.visitNumber)}
+            onToggle={() => toggleVisit(v.visitNumber)}
           />
         ))}
       </ul>
-      {selected.size >= 2 && (
+      {selectedVisit.size > 0 && (
         <nav className="session-list__compare" aria-label="compare">
-          {/*
-            The `?ids=` payload is built from server-trusted measurementId
-            integers. The Phase 5 compare page MUST re-validate each
-            segment (regex /^\d{1,15}$/ + positive-integer guard, cap
-            array length to <= 4) because the same URL can be crafted by
-            hand. See post-Phase-4 security review note.
-          */}
-          <Link to={`/sessions/compare?ids=${[...selected].sort((a, b) => a - b).join(',')}`}>
-            <Button>
-              {t('session.list.compareSelected').replace('{count}', String(selected.size))}
-            </Button>
-          </Link>
+          {canCompare ? (
+            <Link to={`/sessions/compare?ids=${idsForCompare}`}>
+              <Button>
+                {t('session.list.compareSelected').replace(
+                  '{count}',
+                  String(selectedComplete.length),
+                )}
+              </Button>
+            </Link>
+          ) : (
+            <span className="session-list__compare-hint" role="status">
+              {t('session.list.visitNeedExactlyTwoHint')}
+            </span>
+          )}
         </nav>
       )}
     </section>
   )
 }
 
-interface SessionRowProps {
+interface VisitCardProps {
   patientId: string
-  session: MeasurementSummary
-  pair: PairMotion
+  visit: Visit
   isSelected: boolean
   onToggle: () => void
 }
 
-function SessionRow({ patientId, session, pair, isSelected, onToggle }: SessionRowProps) {
+function VisitCard({ patientId, visit, isSelected, onToggle }: VisitCardProps) {
+  const { t } = useT()
+  const visitTitle = t('session.list.visitLabel').replace('{n}', String(visit.visitNumber))
+  const partial = visit.extension === null
+
+  return (
+    <li className={`session-list__visit${isSelected ? ' session-list__visit--selected' : ''}`}>
+      <label className="session-list__visit-header">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={onToggle}
+          aria-label={t('session.list.compareSelectAria').replace(
+            '{id}',
+            String(visit.visitNumber),
+          )}
+          disabled={partial}
+        />
+        <span className="session-list__visit-number">{visitTitle}</span>
+        <time className="session-list__visit-date" dateTime={visit.startTime}>
+          {formatStart(visit.startTime)}
+        </time>
+        {partial && (
+          <span className="session-list__visit-partial">{t('session.list.partialVisit')}</span>
+        )}
+      </label>
+      <div className="session-list__visit-rows">
+        <VisitMotionRow
+          patientId={patientId}
+          session={visit.flexion}
+          motion="flexion"
+          label={t('session.pair.flexion')}
+        />
+        {visit.extension && (
+          <VisitMotionRow
+            patientId={patientId}
+            session={visit.extension}
+            motion="extension"
+            label={t('session.pair.extension')}
+          />
+        )}
+      </div>
+    </li>
+  )
+}
+
+interface VisitMotionRowProps {
+  patientId: string
+  session: { measurementId: number; endTime: string | null; memo: string | null }
+  motion: 'flexion' | 'extension'
+  label: string
+}
+
+function VisitMotionRow({ patientId, session, motion, label }: VisitMotionRowProps) {
   const { t } = useT()
   const inProgress = session.endTime === null
   return (
-    <li className={`session-list__row${inProgress ? ' session-list__row--in-progress' : ''}`}>
-      <input
-        type="checkbox"
-        checked={isSelected}
-        onChange={onToggle}
-        aria-label={t('session.list.compareSelectAria').replace(
-          '{id}',
-          String(session.measurementId),
-        )}
-        className="session-list__check"
-      />
-      <Link
-        to={`/patients/${patientId}/sessions/${session.measurementId}`}
-        className="session-list__link"
-      >
-        <span className="session-list__time">{formatStart(session.startTime)}</span>
-        <span className={`session-list__pair session-list__pair--${pair}`}>
-          {t(`session.pair.${pair}`)}
-        </span>
-        <span className="session-list__memo">{session.memo ?? t('session.list.noMemo')}</span>
-        {inProgress && <span className="session-list__badge">{t('session.list.inProgress')}</span>}
-      </Link>
-    </li>
+    <Link
+      to={`/patients/${patientId}/sessions/${session.measurementId}`}
+      className={`session-list__motion session-list__motion--${motion}`}
+    >
+      <span className={`session-list__pair session-list__pair--${motion}`}>{label}</span>
+      <span className="session-list__memo">{session.memo ?? t('session.list.noMemo')}</span>
+      {inProgress && <span className="session-list__badge">{t('session.list.inProgress')}</span>}
+    </Link>
   )
 }
 

@@ -10,56 +10,95 @@
   gap: var(--space-2);
 }
 
-.session-list__rows {
+.session-list__visits {
   list-style: none;
   padding: 0;
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-3);
 }
 
-.session-list__row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
+/* Visit card — wraps one flex+ext pair as a single clinical event. */
+.session-list__visit {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-4);
-  transition: background var(--duration-fast) var(--ease-out-expo);
+  transition:
+    border-color var(--duration-fast) var(--ease-out-expo),
+    background var(--duration-fast) var(--ease-out-expo);
 }
 
-.session-list__row:hover {
+.session-list__visit--selected {
+  border-color: var(--color-accent);
   background: var(--color-surface-raised);
+  box-shadow: 0 0 0 1px var(--color-accent) inset;
 }
 
-.session-list__row--in-progress {
-  border-left: 4px solid var(--color-warning);
+.session-list__visit-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  cursor: pointer;
+  margin-bottom: var(--space-2);
 }
 
-.session-list__check {
-  width: 1.1rem;
-  height: 1.1rem;
+.session-list__visit-header input[type='checkbox'] {
+  width: 1.15rem;
+  height: 1.15rem;
 }
 
-.session-list__link {
+.session-list__visit-header input[type='checkbox']:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.session-list__visit-number {
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+}
+
+.session-list__visit-date {
+  color: var(--color-fg-muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+
+.session-list__visit-partial {
+  font-size: var(--text-xs);
+  color: var(--color-fg-muted);
+  font-style: italic;
+}
+
+.session-list__visit-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-left: calc(1.15rem + var(--space-3));
+}
+
+.session-list__motion {
   display: grid;
-  grid-template-columns: minmax(10rem, auto) 1fr auto;
+  grid-template-columns: 5rem 1fr auto;
   gap: var(--space-3);
   align-items: baseline;
   text-decoration: none;
   color: inherit;
-  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  transition: background var(--duration-fast) var(--ease-out-expo);
 }
 
-.session-list__time {
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
+.session-list__motion:hover {
+  background: var(--color-surface-raised);
 }
 
 .session-list__memo {
   color: var(--color-fg-muted);
+  font-size: 0.92rem;
 }
 
 .session-list__badge {
@@ -74,13 +113,16 @@
 /* Flexion / extension pair label. See IMPL_SPEC §8.14 future-work — the
    device contract will eventually carry an explicit motion field. */
 .session-list__pair {
+  display: inline-block;
   font-size: var(--text-xs);
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   border-radius: var(--radius-pill);
   padding: 0 var(--space-2);
   border: 1px solid currentColor;
+  text-align: center;
+  min-width: 4.5rem;
 }
 .session-list__pair--flexion {
   color: oklch(48% 0.13 250);
@@ -92,4 +134,11 @@
 .session-list__compare {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.session-list__compare-hint {
+  color: var(--color-fg-muted);
+  font-size: 0.9rem;
 }

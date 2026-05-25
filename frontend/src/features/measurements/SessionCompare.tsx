@@ -11,9 +11,11 @@ import { usePatientsQuery } from '../patients/usePatients'
 
 import { ComparisonFigure } from './ComparisonFigure'
 import { OverlayChart, paletteColor, type OverlaySeries } from './OverlayChart'
+import { VisitComparison } from './VisitComparison'
 import { countValidIdSegments, MAX_COMPARE_IDS, parseCompareIds } from './lib/compareIds'
 import { pairMotionForIndex, type PairMotion } from './lib/pairLabel'
 import { computeSessionStats } from './lib/stats'
+import { pickVisitPairFromIds } from './lib/visits'
 import type { DataPoint, MeasurementSummary } from './schema'
 import { useDataPointsQuery, useSessionsQuery } from './useMeasurements'
 
@@ -188,8 +190,8 @@ function CompareLoader({
       label: string
       memo: string | null
       peak: number | null
-      impulse: number | null
     }> = []
+    const dataByMid = new Map<number, ReadonlyArray<DataPoint>>()
     // Pair (flexion/extension) label is derived from each measurement's
     // chronological position in the patient's full session list. See
     // IMPL_SPEC §8.14 — replaced by an explicit device-side motion field
@@ -206,6 +208,7 @@ function CompareLoader({
     }> = []
     ids.forEach((id, i) => {
       const points = (dataQueries[i]?.data ?? []) as ReadonlyArray<DataPoint>
+      dataByMid.set(id, points)
       const meta = sessionsAll.find((s) => s.measurementId === id)
       const label = meta ? `#${id} · ${meta.startTime.slice(0, 16)}` : `#${id}`
       seriesOut.push({ id, label, points })
@@ -215,7 +218,6 @@ function CompareLoader({
         label,
         memo: meta?.memo ?? null,
         peak: stats.peakN,
-        impulse: stats.impulseNs,
       })
       if (meta) pairCandidates.push({ meta, points, pair: pairOf(id) })
     })
@@ -236,7 +238,10 @@ function CompareLoader({
       )
       figurePair = { baseline: sorted[0]!, followup: sorted[1]! }
     }
-    return { series: seriesOut, rows: rowsOut, figurePair }
+    // Visit pair: 4 ids that group cleanly into two complete visits.
+    // Baseline = older visit, Followup = newer. See lib/visits.ts.
+    const visitPair = pickVisitPairFromIds(ids, sessionsAll)
+    return { series: seriesOut, rows: rowsOut, figurePair, visitPair, dataByMid }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ids, data0Ref, data1Ref, data2Ref, data3Ref, sessionsKey])
 
@@ -269,16 +274,33 @@ function CompareLoader({
     )
   }
 
+  // Visit-pair mode: 4 ids forming two complete clinical visits (flex+ext
+  // each). Renders flexion-vs-flexion stacked over extension-vs-extension,
+  // each with its own ΔPeak panel. Triggered automatically when the URL
+  // ids resolve to a clean 2-visit set (see lib/visits.ts).
+  if (built.visitPair) {
+    return (
+      <VisitComparison
+        baselineVisit={built.visitPair.baselineVisit}
+        followupVisit={built.visitPair.followupVisit}
+        dataByMid={built.dataByMid}
+      />
+    )
+  }
+
   // Figure mode: exactly 2 sessions selected AND both metas resolved.
-  // Renders a deliberately minimal "paper figure" layout — overlay of the
-  // two curves with peak markers + a headline ΔPeak panel. No stats table
-  // (multi-overlay 3-4 path below keeps it).
+  // Used when comparing across visits without a full pair (e.g. flexion
+  // vs flexion across two visits). Same paper-quality layout, just one
+  // motion at a time.
   if (ids.length === 2 && built.figurePair) {
     return (
       <ComparisonFigure baseline={built.figurePair.baseline} followup={built.figurePair.followup} />
     )
   }
 
+  // Multi-overlay mode (3 ids that aren't a clean visit pair, or any
+  // mid-count we don't have a specialized layout for). Peak-only table —
+  // impulse intentionally dropped per Phase 10 user request.
   return (
     <>
       <OverlayChart series={built.series} />
@@ -288,7 +310,6 @@ function CompareLoader({
             <th scope="col">{t('session.compare.table.session')}</th>
             <th scope="col">{t('session.compare.table.memo')}</th>
             <th scope="col">{t('session.compare.table.peak')}</th>
-            <th scope="col">{t('session.compare.table.impulse')}</th>
           </tr>
         </thead>
         <tbody>
@@ -304,7 +325,6 @@ function CompareLoader({
               </td>
               <td>{row.memo ?? t('session.list.noMemo')}</td>
               <td>{formatN(row.peak ?? NaN)}</td>
-              <td>{row.impulse === null ? '-' : `${row.impulse.toFixed(2)} N·s`}</td>
             </tr>
           ))}
         </tbody>

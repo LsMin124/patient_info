@@ -1666,3 +1666,32 @@ Pi 호스팅 불안정성을 이유로 인터넷 PaaS 데모 환경으로 갈아
 4. **프론트엔드**: `pairLabel.ts` 삭제, motion을 `MeasurementSummary`에서 직접 읽기. ComparisonFigure에서 동일 motion끼리만 비교 가능하도록 UX 가드 (현재는 무제한).
 
 본 phase에서는 시연 시급성으로 인해 표시 전용 라벨로만 처리. 운영 도입 전 반드시 구조적 해결 필요.
+
+---
+
+## 8.15 Phase 10 / T51 — Visit-based grouping & paired comparison (2026-05-25)
+
+### 8.15.1 적용된 변경
+
+| 영역 | 내용 |
+|---|---|
+| Visit 모델 (`lib/visits.ts`) | 환자의 측정 세션을 시간 오름차순 정렬 후 짝수 인덱스=flexion, 다음 인덱스=extension으로 묶어 `Visit { visitNumber, flexion, extension|null, startTime }` 생성. extension 미수신 시 partial visit (체크박스 disable). `pickVisitPairFromIds(ids, sessions)` — 정확히 4개의 id가 2개의 complete visit으로 떨어질 때만 `{baselineVisit, followupVisit}` 반환, 그 외 null. |
+| `SessionList` UI | 세션 단위 → visit 카드 단위로 재구성. visit 카드 1개당 체크박스 1개 (per-session 아님), 카드 안에 flexion/extension 두 줄. partial visit은 시각적으로 구분 + 비교 선택 불가. 정확히 2개 visit 선택 시에만 compare 링크 노출, 1개 선택 시 hint. |
+| `SessionCompare` 라우팅 | URL `?ids=...`를 받아 4개 id가 2개의 complete visit으로 깔끔하게 풀리면 `VisitComparison` 컴포넌트로 라우팅 (flex-vs-flex / ext-vs-ext stacked). 그 외 케이스(2개=기존 단일 ComparisonFigure, 3·4개 임의=multi-overlay 테이블) 보존. |
+| `VisitComparison` 컴포넌트 | ComparisonFigure 2개를 세로로 쌓음 (Flexion 섹션 위, Extension 섹션 아래). 헤더는 `Visit {baseline} → Visit {followup}`. 색상 도트 indicator + 섹션 라벨로 시각적 구분. |
+| Impulse 제거 | 비교 페이지의 multi-overlay 테이블에서 Impulse 컬럼 제거. ComparisonFigure는 원래 Peak 중심이므로 변경 없음. 단일 세션 detail 페이지는 Impulse 통계 유지 (비교가 아님). |
+| Chart X-axis tick 정합 | `bounds: 'ticks'` + `ticks.stepSize: 1` 추가 — 0,1,2,3,4,5 정수 초만 표시되어 5s에서 정확히 끊김 (이전엔 5s 직전에 4.x tick에서 잘림). |
+| i18n | `session.list.visitLabel`, `visitNeedExactlyTwoHint`, `partialVisit`, `session.figure.visitTitle`, `flexionSection`, `extensionSection` 추가. `session.list.title`을 "Visits"/"내원 기록"으로 변경. |
+
+### 8.15.2 라우팅 우선순위 (`SessionCompare`)
+
+```
+ids.length === 1 → /patients/.../sessions/{id} redirect
+ids.length === 2 → 기존 ComparisonFigure (단일 motion 비교)
+ids.length === 4 && pickVisitPairFromIds() != null → VisitComparison
+그 외 (3, 4 임의, 5+) → multi-overlay 테이블 (peak only)
+```
+
+### 8.15.3 한계 — §8.14.2 future work 의존
+
+Visit grouping은 §8.14의 "짝수 인덱스 = flexion" 추정에 그대로 의존합니다. 디바이스가 motion field를 보내기 시작하면 `lib/visits.ts`도 헤딩 추정 대신 motion field로 페어링하도록 재작성 필요. 그때 `lib/pairLabel.ts`도 함께 삭제됨.
