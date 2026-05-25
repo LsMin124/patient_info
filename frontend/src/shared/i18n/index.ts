@@ -7,7 +7,10 @@ export type { Translations }
 
 const dictionaries: Record<Locale, Translations> = { ko, en }
 
-export const DEFAULT_LOCALE: Locale = 'ko'
+// Defaulting to English so first-time visitors and operators outside the
+// clinic see the UI in English. The locale toggle in Settings still flips
+// to Korean and persists per-user via localStorage.
+export const DEFAULT_LOCALE: Locale = 'en'
 
 export function t(locale: Locale, key: KeyPath): string {
   const value = pickByPath(dictionaries[locale], key)

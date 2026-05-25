@@ -38,7 +38,7 @@ export interface LoadingOverlayProps {
  * Use for page-area loading where you want to keep the underlying content
  * visible (greyed out) instead of a full-screen spinner.
  */
-export function LoadingOverlay({ message = '로딩 중...' }: LoadingOverlayProps) {
+export function LoadingOverlay({ message = 'Loading...' }: LoadingOverlayProps) {
   return (
     <div className="loading-overlay" role="status">
       <Spinner aria-hidden="true" />

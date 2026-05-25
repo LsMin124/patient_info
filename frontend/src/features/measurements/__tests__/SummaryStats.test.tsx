@@ -13,12 +13,12 @@ function wrapper({ children }: { children: ReactNode }) {
 describe('SummaryStats', () => {
   it('renders all six metric labels', () => {
     render(<SummaryStats points={[]} />, { wrapper })
-    expect(screen.getByText('피크')).toBeInTheDocument()
-    expect(screen.getByText('평균')).toBeInTheDocument()
-    expect(screen.getByText('피크 도달 시간')).toBeInTheDocument()
-    expect(screen.getByText('RFD 0–100ms')).toBeInTheDocument()
-    expect(screen.getByText('RFD 100–200ms')).toBeInTheDocument()
-    expect(screen.getByText('면적 (Impulse)')).toBeInTheDocument()
+    expect(screen.getByText('Peak')).toBeInTheDocument()
+    expect(screen.getByText('Mean')).toBeInTheDocument()
+    expect(screen.getByText('Time to peak')).toBeInTheDocument()
+    expect(screen.getByText('RFD 0–100 ms')).toBeInTheDocument()
+    expect(screen.getByText('RFD 100–200 ms')).toBeInTheDocument()
+    expect(screen.getByText('Impulse')).toBeInTheDocument()
   })
 
   it('renders "-" for every metric when the session is empty', () => {

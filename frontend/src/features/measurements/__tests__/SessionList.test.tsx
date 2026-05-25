@@ -54,7 +54,7 @@ describe('SessionList', () => {
   it('renders an empty state when there are no sessions', async () => {
     server.use(http.get('/api/v1/patients/:patientId/measurements', () => HttpResponse.json([])))
     render(wrap(<SessionList patientId="p001" />))
-    expect(await screen.findByText('측정 기록이 없습니다.')).toBeInTheDocument()
+    expect(await screen.findByText('No measurement sessions yet.')).toBeInTheDocument()
   })
 
   it('labels in-progress sessions (endTime null) with the warning badge', async () => {
@@ -65,8 +65,8 @@ describe('SessionList', () => {
     )
     render(wrap(<SessionList patientId="p001" />))
     const link = await screen.findByRole('link')
-    expect(within(link).getByText('측정 진행 중')).toBeInTheDocument()
-    expect(within(link).getByText('메모 없음')).toBeInTheDocument()
+    expect(within(link).getByText('Measurement in progress')).toBeInTheDocument()
+    expect(within(link).getByText('No memo')).toBeInTheDocument()
   })
 
   it('shows a compare button once 2+ sessions are selected', async () => {
@@ -82,9 +82,9 @@ describe('SessionList', () => {
     render(wrap(<SessionList patientId="p001" />))
     const checks = await screen.findAllByRole('checkbox')
     await user.click(checks[0]!)
-    expect(screen.queryByRole('link', { name: /비교/ })).toBeNull()
+    expect(screen.queryByRole('link', { name: /Compare/ })).toBeNull()
     await user.click(checks[1]!)
-    const compare = screen.getByRole('link', { name: /비교/ })
+    const compare = screen.getByRole('link', { name: /Compare/ })
     expect(compare).toHaveAttribute('href', '/sessions/compare?ids=5,7')
   })
 

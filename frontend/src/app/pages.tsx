@@ -23,8 +23,8 @@ export function DashboardPage() {
     <div>
       <h1>{t('nav.dashboard')}</h1>
       <EmptyState
-        title="대시보드 준비 중"
-        description="Phase 3 이후에 최근 측정 요약이 여기에 표시됩니다."
+        title="Dashboard coming soon"
+        description="Recent measurement summaries will appear here in a future release."
       />
     </div>
   )

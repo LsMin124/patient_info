@@ -40,7 +40,7 @@ describe('useSessionsQuery', () => {
     )
     const { result } = renderHook(() => useSessionsQuery('p001'), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isError).toBe(true))
-    expect(result.current.error?.message).toBe('서버에 일시적인 문제가 발생했습니다.')
+    expect(result.current.error?.message).toBe('The server is temporarily unavailable.')
   })
 })
 

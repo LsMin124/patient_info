@@ -22,6 +22,7 @@
 
 | 대상 | 문서 | 비고 |
 |---|---|---|
+| **새 팀원 (Java/Spring 처음)** | [`docs/manual/index.html`](docs/manual/index.html) | 8장 온보딩 튜토리얼 — 설치 → 코드 이해 → 작업 → 배포 → 트러블슈팅. GitHub Pages 활성화 시 `/manual/` 경로로 공개. |
 | 처음 보는 사람 | [`docs/README.html`](docs/README.html) | 프로젝트 개요·기능·구조·실행 가이드 (HTML) |
 | 운영자 | [`docs/RUNBOOK.html`](docs/RUNBOOK.html) | 배포·자격증명 로테이션·트러블슈팅 (HTML) |
 | AI / dev 검색용 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | RUNBOOK의 텍스트 미러 |

@@ -38,12 +38,12 @@ function renderAt(search: string) {
 describe('SessionCompare', () => {
   it('renders "too few" empty state when fewer than 2 ids', async () => {
     renderAt('?ids=1')
-    expect(await screen.findByText('비교할 세션이 부족합니다')).toBeInTheDocument()
+    expect(await screen.findByText('Not enough sessions to compare')).toBeInTheDocument()
   })
 
   it('renders "too many" empty state when >MAX ids supplied', async () => {
     renderAt('?ids=1,2,3,4,5')
-    expect(await screen.findByText('최대 4개까지만 비교할 수 있습니다')).toBeInTheDocument()
+    expect(await screen.findByText('Up to 4 sessions can be compared at once')).toBeInTheDocument()
   })
 
   it('renders chart + comparison table on valid ids', async () => {

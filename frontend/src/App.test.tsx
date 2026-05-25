@@ -6,18 +6,18 @@ import App from './App'
 describe('App', () => {
   it('renders AppShell with Dashboard heading on default route', () => {
     render(<App />)
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('대시보드')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Dashboard')
   })
 
   it('renders the skip-link as the first focusable element', () => {
     render(<App />)
-    expect(screen.getByText('본문으로 건너뛰기')).toBeInTheDocument()
+    expect(screen.getByText('Skip to content')).toBeInTheDocument()
   })
 
   it('renders nav links for primary sections', () => {
     render(<App />)
-    expect(screen.getByRole('link', { name: '대시보드' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: '환자' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: '설정' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Dashboard' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Patients' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Settings' })).toBeInTheDocument()
   })
 })

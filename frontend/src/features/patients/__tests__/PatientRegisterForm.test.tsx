@@ -29,12 +29,12 @@ function makeWrapper() {
 }
 
 async function fillValid(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(screen.getByLabelText('환자 ID'), 'p100')
-  await user.type(screen.getByLabelText('이름'), '신환자')
-  await user.type(screen.getByLabelText('나이'), '25')
-  await user.selectOptions(screen.getByLabelText('성별'), 'female')
-  await user.type(screen.getByLabelText('키 (cm)'), '165')
-  await user.type(screen.getByLabelText('체중 (kg)'), '55')
+  await user.type(screen.getByLabelText('Patient ID'), 'p100')
+  await user.type(screen.getByLabelText('Name'), '신환자')
+  await user.type(screen.getByLabelText('Age'), '25')
+  await user.selectOptions(screen.getByLabelText('Sex'), 'female')
+  await user.type(screen.getByLabelText('Height (cm)'), '165')
+  await user.type(screen.getByLabelText('Weight (kg)'), '55')
 }
 
 describe('PatientRegisterForm', () => {
@@ -52,16 +52,16 @@ describe('PatientRegisterForm', () => {
     render(<PatientRegisterForm onDone={onDone} />, { wrapper: makeWrapper() })
 
     // Invalid: spaces are not allowed in patientId
-    await user.type(screen.getByLabelText('환자 ID'), 'p 100')
-    await user.type(screen.getByLabelText('이름'), '신환자')
-    await user.type(screen.getByLabelText('나이'), '25')
-    await user.type(screen.getByLabelText('키 (cm)'), '165')
-    await user.type(screen.getByLabelText('체중 (kg)'), '55')
+    await user.type(screen.getByLabelText('Patient ID'), 'p 100')
+    await user.type(screen.getByLabelText('Name'), '신환자')
+    await user.type(screen.getByLabelText('Age'), '25')
+    await user.type(screen.getByLabelText('Height (cm)'), '165')
+    await user.type(screen.getByLabelText('Weight (kg)'), '55')
 
-    await user.click(screen.getByRole('button', { name: '등록' }))
+    await user.click(screen.getByRole('button', { name: 'Register' }))
 
     expect(await screen.findByRole('alert')).toBeInTheDocument()
-    expect(screen.getByLabelText('환자 ID')).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByLabelText('Patient ID')).toHaveAttribute('aria-invalid', 'true')
     expect(postCount).toBe(0)
     expect(onDone).not.toHaveBeenCalled()
   })
@@ -72,10 +72,10 @@ describe('PatientRegisterForm', () => {
     render(<PatientRegisterForm onDone={onDone} />, { wrapper: makeWrapper() })
 
     await fillValid(user)
-    await user.click(screen.getByRole('button', { name: '등록' }))
+    await user.click(screen.getByRole('button', { name: 'Register' }))
 
     await waitFor(() => expect(onDone).toHaveBeenCalled())
-    expect(screen.getByText('환자가 등록되었습니다.')).toBeInTheDocument()
+    expect(screen.getByText('Patient registered.')).toBeInTheDocument()
   })
 
   it('on backend rejection: shows sanitized error toast (no leak of raw server message)', async () => {
@@ -89,9 +89,9 @@ describe('PatientRegisterForm', () => {
 
     render(<PatientRegisterForm onDone={onDone} />, { wrapper: makeWrapper() })
     await fillValid(user)
-    await user.click(screen.getByRole('button', { name: '등록' }))
+    await user.click(screen.getByRole('button', { name: 'Register' }))
 
-    expect(await screen.findByText('이미 존재하는 데이터입니다.')).toBeInTheDocument()
+    expect(await screen.findByText('A record with this value already exists.')).toBeInTheDocument()
     expect(screen.queryByText(/p100/)).toBeNull()
     expect(onDone).not.toHaveBeenCalled()
   })

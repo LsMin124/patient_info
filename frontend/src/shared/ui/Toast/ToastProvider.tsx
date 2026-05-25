@@ -20,7 +20,7 @@ interface ToastProviderProps {
 export function ToastProvider({
   children,
   defaultDurationMs = DEFAULT_DURATION_MS,
-  regionLabel = '알림',
+  regionLabel = 'Notifications',
 }: ToastProviderProps) {
   const [toasts, setToasts] = useState<Toast[]>([])
   const counterRef = useRef(0)

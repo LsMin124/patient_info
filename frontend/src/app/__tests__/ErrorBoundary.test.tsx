@@ -51,7 +51,7 @@ describe('ErrorBoundary', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
     render(<Toggle />)
     expect(screen.getByRole('alert')).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: '다시 시도' }))
+    await user.click(screen.getByRole('button', { name: 'Retry' }))
     expect(screen.getByRole('alert')).toBeInTheDocument()
     spy.mockRestore()
   })

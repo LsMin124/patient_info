@@ -13,6 +13,8 @@ const wrapper = ({ children }: { children: ReactNode }) => (
 
 describe('i18n.t (pure)', () => {
   it('looks up nested keys for ko', () => {
+    // Korean dictionary still holds Korean copy — keeps the locale toggle
+    // meaningful even after the default flipped to English (post-Phase-9).
     expect(t('ko', 'app.title')).toBe('근기능 측정 대시보드')
     expect(t('ko', 'session.stats.peak')).toBe('피크')
   })
@@ -38,10 +40,10 @@ describe('LocaleProvider + useT', () => {
     window.localStorage.clear()
   })
 
-  it('defaults to ko when no stored locale', () => {
+  it('defaults to en when no stored locale', () => {
     const { result } = renderHook(() => useT(), { wrapper })
-    expect(result.current.locale).toBe('ko')
-    expect(result.current.t('app.title')).toBe('근기능 측정 대시보드')
+    expect(result.current.locale).toBe('en')
+    expect(result.current.t('app.title')).toBe('Strength Measurement Dashboard')
   })
 
   it('reads en from localStorage', () => {
@@ -89,8 +91,8 @@ describe('LocaleProvider + useT', () => {
       </LocaleProvider>,
     )
 
-    expect(screen.getByTestId('a').textContent).toBe('근기능 측정 대시보드')
-    expect(screen.getByTestId('b').textContent).toBe('근기능 측정 대시보드')
+    expect(screen.getByTestId('a').textContent).toBe('Strength Measurement Dashboard')
+    expect(screen.getByTestId('b').textContent).toBe('Strength Measurement Dashboard')
 
     await user.click(screen.getByRole('button', { name: 'to en' }))
 

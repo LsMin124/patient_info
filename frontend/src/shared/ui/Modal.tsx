@@ -20,7 +20,7 @@ const FOCUSABLE_SELECTOR =
  * focus within the dialog while open, restores focus to the previously-focused
  * element on close, and locks body scroll. ESC closes. Backdrop click closes.
  */
-export function Modal({ isOpen, onClose, title, children, closeLabel = '닫기' }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, closeLabel = 'Close' }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement | null>(null)
   const previouslyFocused = useRef<HTMLElement | null>(null)
   const titleId = useId()

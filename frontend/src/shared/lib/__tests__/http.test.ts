@@ -59,7 +59,7 @@ describe('httpGet', () => {
     const err = await httpGet('/api/v1/patients/p001/measurements', okSchema).catch((e) => e)
     expect(err).toBeInstanceOf(ApiError)
     expect(err.status).toBe(422)
-    expect(err.message).toBe('입력값을 확인해 주세요.')
+    expect(err.message).toBe('Please check the submitted values.')
     expect(err.message).not.toContain('p001')
     expect(err.message).not.toContain('/api/v1')
     // Path is still preserved on `cause` for debugging.
@@ -77,7 +77,7 @@ describe('httpGet', () => {
     const err = await httpGet('/api/v1/missing', okSchema).catch((e) => e)
     expect(err).toBeInstanceOf(ApiError)
     expect(err.status).toBe(404)
-    expect(err.message).toBe('요청한 리소스를 찾을 수 없습니다.')
+    expect(err.message).toBe('The requested resource was not found.')
     expect(err.message).not.toContain('p001')
     expect(err.cause).toEqual({ error: 'Invalid patient Id: p001' })
   })
@@ -96,7 +96,7 @@ describe('httpGet', () => {
     const err = await httpGet('/api/v1/patients/p001/measurements', okSchema).catch((e) => e)
     expect(err).toBeInstanceOf(ApiError)
     expect(err.status).toBe(404)
-    expect(err.message).toBe('요청한 리소스를 찾을 수 없습니다.')
+    expect(err.message).toBe('The requested resource was not found.')
     expect(err.message).not.toContain('p001')
     expect(err.cause).toEqual(serverEnvelope)
   })
@@ -106,17 +106,17 @@ describe('httpGet', () => {
     const err = await httpGet('/api/v1/oops', okSchema).catch((e) => e)
     expect(err).toBeInstanceOf(ApiError)
     expect(err.status).toBe(500)
-    expect(err.message).toBe('서버에 일시적인 문제가 발생했습니다.')
+    expect(err.message).toBe('The server is temporarily unavailable.')
     expect(err.cause).toBeUndefined()
   })
 
   it('maps 4xx statuses to status-specific generic messages', async () => {
     const cases: Array<[number, string]> = [
-      [400, '잘못된 요청입니다.'],
-      [401, '인증이 필요합니다.'],
-      [403, '접근 권한이 없습니다.'],
-      [409, '이미 존재하는 데이터입니다.'],
-      [422, '입력값을 확인해 주세요.'],
+      [400, 'Bad request.'],
+      [401, 'Authentication required.'],
+      [403, 'Access denied.'],
+      [409, 'A record with this value already exists.'],
+      [422, 'Please check the submitted values.'],
     ]
     for (const [status, expected] of cases) {
       fetchMock.mockResolvedValueOnce(jsonResponse({ error: 'leaky-detail' }, status))

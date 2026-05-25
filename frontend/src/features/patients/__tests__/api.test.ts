@@ -83,7 +83,7 @@ describe('createPatient', () => {
     }).catch((e: unknown) => e)
     expect(err).toMatchObject({ name: 'ApiError', status: 409 })
     if (err instanceof Error) {
-      expect(err.message).toBe('이미 존재하는 데이터입니다.')
+      expect(err.message).toBe('A record with this value already exists.')
       expect(err.message).not.toContain('p001')
     }
   })

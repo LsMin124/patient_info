@@ -16,14 +16,14 @@ export interface ErrorFallbackProps {
  */
 export function ErrorFallback({ error, onReset, title }: ErrorFallbackProps) {
   const message = errorMessageOf(error)
-  const heading = title ?? '문제가 발생했습니다.'
+  const heading = title ?? 'Something went wrong.'
 
   return (
     <div role="alert" style={containerStyle}>
       <h2 style={headingStyle}>{heading}</h2>
       <p style={messageStyle}>{message}</p>
       <button type="button" onClick={onReset} style={resetButtonStyle}>
-        다시 시도
+        Retry
       </button>
     </div>
   )
@@ -33,7 +33,7 @@ function errorMessageOf(error: unknown): string {
   if (error instanceof Error) {
     return error.message
   }
-  return '알 수 없는 오류가 발생했습니다.'
+  return 'An unknown error occurred.'
 }
 
 const containerStyle: CSSProperties = {

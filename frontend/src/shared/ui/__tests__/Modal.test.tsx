@@ -16,13 +16,13 @@ describe('Modal', () => {
 
   it('renders dialog with aria-modal and labelled by title', () => {
     render(
-      <Modal isOpen={true} onClose={() => {}} title="신규 환자 등록">
+      <Modal isOpen={true} onClose={() => {}} title="Register patient">
         <p>body</p>
       </Modal>,
     )
     const dialog = screen.getByRole('dialog')
     expect(dialog).toHaveAttribute('aria-modal', 'true')
-    expect(screen.getByText('신규 환자 등록')).toBeInTheDocument()
+    expect(screen.getByText('Register patient')).toBeInTheDocument()
   })
 
   it('closes on ESC', async () => {
@@ -59,7 +59,7 @@ describe('Modal', () => {
         <button type="button">last</button>
       </Modal>,
     )
-    const closeBtn = screen.getByRole('button', { name: '닫기' })
+    const closeBtn = screen.getByRole('button', { name: 'Close' })
     const lastBtn = screen.getByRole('button', { name: 'last' })
 
     // Dispatch the Tab key directly against document — Modal's trap listens
@@ -80,7 +80,7 @@ describe('Modal', () => {
         <button type="button">last</button>
       </Modal>,
     )
-    const closeBtn = screen.getByRole('button', { name: '닫기' })
+    const closeBtn = screen.getByRole('button', { name: 'Close' })
     const lastBtn = screen.getByRole('button', { name: 'last' })
 
     closeBtn.focus()

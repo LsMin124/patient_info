@@ -73,25 +73,25 @@ describe('SessionDetail', () => {
       await screen.findByRole('heading', { level: 1, name: /테스트환자A/ }),
     ).toBeInTheDocument()
     expect(screen.getByTestId('mock-line-chart')).toBeInTheDocument()
-    expect(screen.getByText('피크')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'CSV 내려받기' })).toBeEnabled()
+    expect(screen.getByText('Peak')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Download CSV' })).toBeEnabled()
   })
 
   it('renders an EmptyState when the session has no data points', async () => {
     server.use(http.get('/api/v1/measurements/:id/data', () => HttpResponse.json([])))
     renderAt('p001', '101')
-    expect(await screen.findByText('데이터가 없습니다')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'CSV 내려받기' })).toBeDisabled()
+    expect(await screen.findByText('No data')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Download CSV' })).toBeDisabled()
   })
 
   it('renders an in-progress badge when the session endTime is null', async () => {
     renderAt('p001', '102')
-    expect(await screen.findByText('측정 진행 중')).toBeInTheDocument()
+    expect(await screen.findByText('Measurement in progress')).toBeInTheDocument()
   })
 
   it('routes to not-found EmptyState for an unknown measurementId', async () => {
     renderAt('p001', '99999')
-    expect(await screen.findByText('세션을 찾을 수 없습니다')).toBeInTheDocument()
+    expect(await screen.findByText('Session not found')).toBeInTheDocument()
   })
 
   it('renders not-found for a non-numeric measurementId without firing a query', async () => {
@@ -103,14 +103,14 @@ describe('SessionDetail', () => {
       }),
     )
     renderAt('p001', 'abc')
-    expect(await screen.findByText('세션을 찾을 수 없습니다')).toBeInTheDocument()
+    expect(await screen.findByText('Session not found')).toBeInTheDocument()
     expect(dataCalls).toBe(0)
   })
 
   it('triggers a CSV download via the temporary anchor when clicked', async () => {
     const user = userEvent.setup()
     renderAt('p001', '101')
-    const button = await screen.findByRole('button', { name: 'CSV 내려받기' })
+    const button = await screen.findByRole('button', { name: 'Download CSV' })
     await user.click(button)
     expect(downloadSpy).toHaveBeenCalledOnce()
   })

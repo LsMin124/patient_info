@@ -45,8 +45,8 @@ describe('PatientDetail', () => {
   it('shows a not-found EmptyState for unknown patientId', async () => {
     renderAt('unknown999')
     // Wait for the query to resolve so we leave the skeleton state
-    expect(await screen.findByText('환자를 찾을 수 없습니다')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: '환자 목록' })).toHaveAttribute('href', '/patients')
+    expect(await screen.findByText('Patient not found')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Patients' })).toHaveAttribute('href', '/patients')
   })
 
   it('shows error fallback when the underlying list query fails', async () => {

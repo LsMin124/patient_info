@@ -26,13 +26,13 @@ describe('Loading primitives', () => {
   it('EmptyState renders title + description + action slot', () => {
     render(
       <EmptyState
-        title="측정 기록이 없습니다"
-        description="장비를 통해 측정을 시작해 보세요."
-        action={<button type="button">확인</button>}
+        title="No measurement sessions yet."
+        description="Use the device to start a measurement."
+        action={<button type="button">OK</button>}
       />,
     )
-    expect(screen.getByText('측정 기록이 없습니다')).toBeInTheDocument()
-    expect(screen.getByText('장비를 통해 측정을 시작해 보세요.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '확인' })).toBeInTheDocument()
+    expect(screen.getByText('No measurement sessions yet.')).toBeInTheDocument()
+    expect(screen.getByText('Use the device to start a measurement.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'OK' })).toBeInTheDocument()
   })
 })

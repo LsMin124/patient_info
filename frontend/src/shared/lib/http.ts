@@ -37,14 +37,14 @@ const PARSE_STATUS = 422
  * `error.status` rather than parse the message.
  */
 function genericMessageForStatus(status: number): string {
-  if (status === 400) return '잘못된 요청입니다.'
-  if (status === 401) return '인증이 필요합니다.'
-  if (status === 403) return '접근 권한이 없습니다.'
-  if (status === 404) return '요청한 리소스를 찾을 수 없습니다.'
-  if (status === 409) return '이미 존재하는 데이터입니다.'
-  if (status === 422) return '입력값을 확인해 주세요.'
-  if (status >= 500) return '서버에 일시적인 문제가 발생했습니다.'
-  return `요청이 실패했습니다 (${status})`
+  if (status === 400) return 'Bad request.'
+  if (status === 401) return 'Authentication required.'
+  if (status === 403) return 'Access denied.'
+  if (status === 404) return 'The requested resource was not found.'
+  if (status === 409) return 'A record with this value already exists.'
+  if (status === 422) return 'Please check the submitted values.'
+  if (status >= 500) return 'The server is temporarily unavailable.'
+  return `Request failed (${status})`
 }
 
 interface RequestOptions {

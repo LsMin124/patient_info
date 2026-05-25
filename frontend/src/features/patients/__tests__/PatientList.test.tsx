@@ -56,14 +56,14 @@ describe('PatientList', () => {
   it('renders empty state when the API returns no rows', async () => {
     server.use(http.get('/api/v1/patients', () => HttpResponse.json([])))
     render(<PatientList />, { wrapper: makeWrapper() })
-    expect(await screen.findByText('등록된 환자가 없습니다.')).toBeInTheDocument()
+    expect(await screen.findByText('No patients registered yet.')).toBeInTheDocument()
   })
 
   it('renders error fallback on API failure with retry button', async () => {
     server.use(http.get('/api/v1/patients', () => HttpResponse.json({}, { status: 500 })))
     render(<PatientList />, { wrapper: makeWrapper() })
     expect(await screen.findByRole('alert')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '다시 시도' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
   })
 
   it('debounced search filters rows after the delay', async () => {
@@ -79,7 +79,7 @@ describe('PatientList', () => {
     render(<PatientList />, { wrapper: makeWrapper() })
     await screen.findByRole('link', { name: 'p001' })
 
-    await user.type(screen.getByLabelText('이름 또는 ID로 검색'), '서연')
+    await user.type(screen.getByLabelText('Search by name or ID'), '서연')
     await waitFor(
       () => {
         expect(screen.queryByRole('link', { name: 'p001' })).toBeNull()
@@ -103,7 +103,7 @@ describe('PatientList', () => {
     expect(screen.getByRole('link', { name: 'p030' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'p001' })).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: '다음' }))
+    await user.click(screen.getByRole('button', { name: 'Next' }))
     expect(await screen.findByText(/2 \/ 2/)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'p001' })).toBeInTheDocument()
   })

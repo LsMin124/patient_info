@@ -5,23 +5,23 @@ import { Input } from '../Input'
 
 describe('Input', () => {
   it('connects label to input via htmlFor/id', () => {
-    render(<Input label="이름" defaultValue="테스트환자A" />)
-    const input = screen.getByLabelText('이름')
-    expect(input).toHaveValue('테스트환자A')
+    render(<Input label="Name" defaultValue="DemoSubject" />)
+    const input = screen.getByLabelText('Name')
+    expect(input).toHaveValue('DemoSubject')
   })
 
   it('renders hint and connects aria-describedby', () => {
-    render(<Input label="환자 ID" hint="예: p001" />)
-    const input = screen.getByLabelText('환자 ID')
+    render(<Input label="Patient ID" hint="e.g. p001" />)
+    const input = screen.getByLabelText('Patient ID')
     const describedBy = input.getAttribute('aria-describedby')
     expect(describedBy).toBeTruthy()
-    expect(screen.getByText('예: p001').id).toBe(describedBy)
+    expect(screen.getByText('e.g. p001').id).toBe(describedBy)
   })
 
   it('renders error with aria-invalid and role="alert"', () => {
-    render(<Input label="나이" error="0–150 사이" />)
-    const input = screen.getByLabelText('나이')
+    render(<Input label="Age" error="0–150 only" />)
+    const input = screen.getByLabelText('Age')
     expect(input).toHaveAttribute('aria-invalid', 'true')
-    expect(screen.getByRole('alert')).toHaveTextContent('0–150 사이')
+    expect(screen.getByRole('alert')).toHaveTextContent('0–150 only')
   })
 })
