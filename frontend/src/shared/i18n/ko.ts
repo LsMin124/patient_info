@@ -96,6 +96,10 @@ export const ko: Translations = {
       regression: '감소',
       unchanged: '변화 없음',
     },
+    pair: {
+      flexion: '굴곡',
+      extension: '신전',
+    },
     chart: {
       forceLabel: '힘 (N)',
       timeLabel: '시간 (s)',

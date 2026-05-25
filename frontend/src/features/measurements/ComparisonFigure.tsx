@@ -8,6 +8,7 @@ import { KGF_TO_N } from '../../shared/lib/units'
 import './chartSetup'
 import './comparison-figure.css'
 import { lttbDownsample } from './lib/downsample'
+import type { PairMotion } from './lib/pairLabel'
 import { computePeakDelta } from './lib/peakDelta'
 import type { DataPoint, MeasurementSummary } from './schema'
 
@@ -26,10 +27,10 @@ import type { DataPoint, MeasurementSummary } from './schema'
  * overlay flow (3-4 sessions) still has those.
  */
 export interface ComparisonFigureProps {
-  /** Earlier of the two sessions, plus its data points. */
-  baseline: { meta: MeasurementSummary; points: ReadonlyArray<DataPoint> }
-  /** Later of the two sessions, plus its data points. */
-  followup: { meta: MeasurementSummary; points: ReadonlyArray<DataPoint> }
+  /** Earlier of the two sessions, plus its data points + assumed motion. */
+  baseline: { meta: MeasurementSummary; points: ReadonlyArray<DataPoint>; pair: PairMotion }
+  /** Later of the two sessions, plus its data points + assumed motion. */
+  followup: { meta: MeasurementSummary; points: ReadonlyArray<DataPoint>; pair: PairMotion }
 }
 
 const DOWNSAMPLE_THRESHOLD = 10_000
@@ -72,12 +73,10 @@ export function ComparisonFigure({ baseline, followup }: ComparisonFigureProps) 
     ]
   }, [baseline, followup, delta, t])
 
-  const maxX = useMemo(() => {
-    const lastB = baseline.points[baseline.points.length - 1]
-    const lastF = followup.points[followup.points.length - 1]
-    const ms = Math.max(lastB?.timeOffsetMs ?? 0, lastF?.timeOffsetMs ?? 0)
-    return Math.max((ms / 1000) * 1.05, 1)
-  }, [baseline.points, followup.points])
+  // Hard-cap X at 5s for the paper figure — matches ForceChart and gives
+  // a stable, comparable window across visits. Data points past 5s stay
+  // in the dataset but render outside the visible range.
+  const maxX = 5
 
   const reduceMotion =
     typeof window !== 'undefined' &&
@@ -137,12 +136,16 @@ export function ComparisonFigure({ baseline, followup }: ComparisonFigureProps) 
           peakN={delta.baselinePeakN}
           color={BASELINE_COLOR}
           dashed
+          pair={baseline.pair}
+          pairLabel={t(`session.pair.${baseline.pair}`)}
         />
         <PeakRow
           label={t('session.figure.followup')}
           date={followup.meta.startTime}
           peakN={delta.followupPeakN}
           color={FOLLOWUP_COLOR}
+          pair={followup.pair}
+          pairLabel={t(`session.pair.${followup.pair}`)}
         />
         <DeltaBox
           deltaN={delta.deltaN}
@@ -164,9 +167,11 @@ interface PeakRowProps {
   peakN: number
   color: string
   dashed?: boolean
+  pair: PairMotion
+  pairLabel: string
 }
 
-function PeakRow({ label, date, peakN, color, dashed }: PeakRowProps) {
+function PeakRow({ label, date, peakN, color, dashed, pair, pairLabel }: PeakRowProps) {
   return (
     <div className="comparison-figure__peak-row">
       <span
@@ -175,7 +180,15 @@ function PeakRow({ label, date, peakN, color, dashed }: PeakRowProps) {
         aria-hidden="true"
       />
       <div className="comparison-figure__peak-text">
-        <div className="comparison-figure__peak-label">{label}</div>
+        <div className="comparison-figure__peak-label">
+          {label}
+          <span
+            className={`comparison-figure__pair comparison-figure__pair--${pair}`}
+            aria-label={pairLabel}
+          >
+            {pairLabel}
+          </span>
+        </div>
         <div className="comparison-figure__peak-date">{shortDate(date)}</div>
       </div>
       <div className="comparison-figure__peak-value">{peakN.toFixed(1)} N</div>
@@ -202,22 +215,28 @@ function DeltaBox({
   unchangedWord,
   deltaPeakLabel,
 }: DeltaBoxProps) {
-  const sign = deltaN > 0 ? '+' : deltaN < 0 ? '−' : ''
-  const absN = Math.abs(deltaN).toFixed(1)
-  const pctSuffix =
+  // % is the headline (paper-figure use case: at-a-glance change).
+  // Arrow makes direction unmissable. N value drops to secondary line.
+  const arrow = direction === 'up' ? '▲' : direction === 'down' ? '▼' : '▬'
+  const pctText =
     deltaPercent === null
-      ? ''
-      : ` (${deltaPercent >= 0 ? '+' : '−'}${Math.abs(deltaPercent).toFixed(1)}%)`
+      ? '—'
+      : `${deltaPercent >= 0 ? '+' : '−'}${Math.abs(deltaPercent).toFixed(1)}%`
+  const nSign = deltaN > 0 ? '+' : deltaN < 0 ? '−' : ''
+  const nText = `${nSign}${Math.abs(deltaN).toFixed(1)} N`
   const word =
     direction === 'up' ? improvementWord : direction === 'down' ? regressionWord : unchangedWord
 
   return (
     <div className={`comparison-figure__delta comparison-figure__delta--${direction}`}>
       <div className="comparison-figure__delta-label">{deltaPeakLabel}</div>
-      <div className="comparison-figure__delta-value">
-        {sign}
-        {absN} N{pctSuffix}
+      <div className="comparison-figure__delta-headline">
+        <span className="comparison-figure__delta-arrow" aria-hidden="true">
+          {arrow}
+        </span>
+        <span className="comparison-figure__delta-percent">{pctText}</span>
       </div>
+      <div className="comparison-figure__delta-newton">{nText}</div>
       <div className="comparison-figure__delta-word">{word}</div>
     </div>
   )

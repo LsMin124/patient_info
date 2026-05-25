@@ -61,7 +61,10 @@ describe('ForceChart', () => {
     expect(dataset.data[1]!.y).toBeCloseTo(10 * 9.80665, 4)
   })
 
-  it('sets the X-axis max to last-second + 10% (not hardcoded 5000ms)', async () => {
+  it('hard-caps the X-axis at 5 seconds regardless of session duration', async () => {
+    // Clinical protocol fixes the comparison window to 0–5s so successive
+    // measurements (and the figure-mode overlay) line up visually. Data
+    // past 5s stays in the dataset but renders outside the viewport.
     const ForceChart = await loadComponent()
     const points: DataPoint[] = [
       { timeOffsetMs: 0, kgValue: 0 },
@@ -69,7 +72,7 @@ describe('ForceChart', () => {
     ]
     render(<ForceChart points={points} />, { wrapper })
     const max = (capturedOptions as { scales: { x: { max: number } } }).scales.x.max
-    expect(max).toBeCloseTo(8 * 1.1, 4)
+    expect(max).toBe(5)
   })
 
   it('disables animation when prefers-reduced-motion is set', async () => {

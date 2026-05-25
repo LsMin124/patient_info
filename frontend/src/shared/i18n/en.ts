@@ -95,6 +95,13 @@ export const en: Translations = {
       regression: 'regression',
       unchanged: 'unchanged',
     },
+    pair: {
+      // Working assumption (until the device contract grows an explicit
+      // motion field): consecutive measurements arrive as a flexion +
+      // extension pair, in that order. See IMPL_SPEC §8.14 future work.
+      flexion: 'Flexion',
+      extension: 'Extension',
+    },
     chart: {
       forceLabel: 'Force (N)',
       timeLabel: 'Time (s)',

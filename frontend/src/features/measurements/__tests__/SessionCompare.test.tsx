@@ -106,8 +106,10 @@ describe('SessionCompare', () => {
     expect(await screen.findByTestId('overlay-chart')).toBeInTheDocument()
     // No multi-overlay stats table in figure mode
     expect(screen.queryByRole('table')).toBeNull()
-    // Headline ΔPeak + percent
-    expect(await screen.findByText('+19.6 N (+33.3%)')).toBeInTheDocument()
+    // Headline split into percent (big) + Newton (secondary). Assert both
+    // anchors independently so the exact markup can evolve without rewriting.
+    expect(await screen.findByText('+33.3%')).toBeInTheDocument()
+    expect(screen.getByText('+19.6 N')).toBeInTheDocument()
     // Baseline/follow-up labels both present
     expect(screen.getByText('Baseline')).toBeInTheDocument()
     expect(screen.getByText('Follow-up')).toBeInTheDocument()

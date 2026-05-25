@@ -7,6 +7,7 @@ import { EmptyState } from '../../shared/ui/EmptyState'
 import { ErrorFallback } from '../../shared/ui/ErrorFallback'
 import { Skeleton } from '../../shared/ui/Loading'
 
+import { pairMotionForIndex, type PairMotion } from './lib/pairLabel'
 import type { MeasurementSummary } from './schema'
 import { useSessionsQuery } from './useMeasurements'
 
@@ -45,6 +46,18 @@ export function SessionList({ patientId }: SessionListProps) {
   const sortedSessions = useMemo(() => {
     const rows = query.data ?? []
     return [...rows].sort((a, b) => b.startTime.localeCompare(a.startTime))
+  }, [query.data])
+
+  // Working-assumption pair labels: index measurements in chronological
+  // (ascending) order, even → flexion, odd → extension. See IMPL_SPEC §8.14
+  // future-work note — the device contract will eventually carry an
+  // explicit motion field and this map disappears.
+  const pairByMeasurementId = useMemo(() => {
+    const rows = query.data ?? []
+    const ascending = [...rows].sort((a, b) => a.startTime.localeCompare(b.startTime))
+    const m = new Map<number, PairMotion>()
+    ascending.forEach((s, i) => m.set(s.measurementId, pairMotionForIndex(i)))
+    return m
   }, [query.data])
 
   if (query.isLoading) {
@@ -91,6 +104,7 @@ export function SessionList({ patientId }: SessionListProps) {
             key={s.measurementId}
             patientId={patientId}
             session={s}
+            pair={pairByMeasurementId.get(s.measurementId) ?? 'flexion'}
             isSelected={selected.has(s.measurementId)}
             onToggle={() => toggle(s.measurementId)}
           />
@@ -119,11 +133,12 @@ export function SessionList({ patientId }: SessionListProps) {
 interface SessionRowProps {
   patientId: string
   session: MeasurementSummary
+  pair: PairMotion
   isSelected: boolean
   onToggle: () => void
 }
 
-function SessionRow({ patientId, session, isSelected, onToggle }: SessionRowProps) {
+function SessionRow({ patientId, session, pair, isSelected, onToggle }: SessionRowProps) {
   const { t } = useT()
   const inProgress = session.endTime === null
   return (
@@ -143,6 +158,9 @@ function SessionRow({ patientId, session, isSelected, onToggle }: SessionRowProp
         className="session-list__link"
       >
         <span className="session-list__time">{formatStart(session.startTime)}</span>
+        <span className={`session-list__pair session-list__pair--${pair}`}>
+          {t(`session.pair.${pair}`)}
+        </span>
         <span className="session-list__memo">{session.memo ?? t('session.list.noMemo')}</span>
         {inProgress && <span className="session-list__badge">{t('session.list.inProgress')}</span>}
       </Link>

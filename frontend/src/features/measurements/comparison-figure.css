@@ -58,6 +58,26 @@
 .comparison-figure__peak-label {
   font-weight: 600;
   font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Flexion / extension pair label inside the peak row. See IMPL_SPEC §8.14. */
+.comparison-figure__pair {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+}
+.comparison-figure__pair--flexion {
+  color: oklch(48% 0.13 250);
+}
+.comparison-figure__pair--extension {
+  color: oklch(48% 0.15 30);
 }
 
 .comparison-figure__peak-date {
@@ -88,17 +108,40 @@
   margin-bottom: var(--space-1);
 }
 
-.comparison-figure__delta-value {
-  font-size: 1.75rem;
-  font-weight: 700;
+.comparison-figure__delta-headline {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: var(--space-1);
+}
+
+.comparison-figure__delta-arrow {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.comparison-figure__delta-percent {
+  font-size: 2.5rem;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.comparison-figure__delta-newton {
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-fg-muted);
+  margin-top: var(--space-1);
 }
 
 .comparison-figure__delta-word {
   font-size: 0.85rem;
   color: var(--color-fg-muted);
   margin-top: var(--space-1);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 /* Direction colouring — uses currentColor on the border so the box

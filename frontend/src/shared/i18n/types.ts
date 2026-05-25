@@ -97,6 +97,10 @@ export interface Translations {
       regression: string
       unchanged: string
     }
+    pair: {
+      flexion: string
+      extension: string
+    }
     chart: {
       forceLabel: string
       timeLabel: string

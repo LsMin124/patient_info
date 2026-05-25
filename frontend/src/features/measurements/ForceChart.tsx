@@ -61,10 +61,11 @@ export function ForceChart({ points }: ForceChartProps) {
   )
 
   const options = useMemo<ChartOptions<'line'>>(() => {
-    const maxX =
-      visiblePoints.length === 0
-        ? 1
-        : (visiblePoints[visiblePoints.length - 1]!.timeOffsetMs / 1000) * 1.1
+    // Hard-cap the X axis at 5s. Clinical force-curve measurements present
+    // in a fixed window for visual comparison across sessions — matches
+    // ComparisonFigure. Data points past 5s remain in the dataset but
+    // render outside the visible range.
+    const maxX = 5
     const reduceMotion =
       typeof window !== 'undefined' &&
       typeof window.matchMedia === 'function' &&
@@ -78,7 +79,7 @@ export function ForceChart({ points }: ForceChartProps) {
         x: {
           type: 'linear',
           min: 0,
-          max: Math.max(maxX, 1),
+          max: maxX,
           title: { display: true, text: t('session.chart.timeLabel') },
           ticks: {
             callback: (value) => `${value}s`,
@@ -101,7 +102,7 @@ export function ForceChart({ points }: ForceChartProps) {
         },
       },
     }
-  }, [visiblePoints, t])
+  }, [t])
 
   return (
     <div className="force-chart" role="figure" aria-label={t('session.chart.forceLabel')}>

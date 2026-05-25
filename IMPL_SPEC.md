@@ -1636,3 +1636,33 @@ Pi 호스팅 불안정성을 이유로 인터넷 PaaS 데모 환경으로 갈아
 
 - 인증 없음 + 인터넷 노출 → 누구나 `/api/v1/measurements/start` 호출 가능. 임상 무결성 측면에서 사실상 불가능하지만 사용자가 "실 PII 없음 + obscurity 기반" 으로 명시. 실 배포 전환 시 본 결정 재검토 필요.
 - DB password git history 잔존 carry-over (§8.11) 는 여전히 별개. Fly Postgres 는 새 자격증명을 발급하므로 직접 영향 없음.
+
+---
+
+## 8.14 Phase 10 polish — figure visibility / 5s X-cap / Asia/Seoul TZ / flexion-extension pair (2026-05-25)
+
+### 8.14.1 적용된 fix
+
+| 영역 | 내용 |
+|---|---|
+| ComparisonFigure DeltaBox | %를 headline (font 2.5rem)으로 끌어올림, 방향 화살표 (▲▼▬) + 색상으로 강조, N값은 secondary로. 논문 figure 가시성 우선. |
+| Chart X-axis | ForceChart + ComparisonFigure 모두 hard cap = 5초. 데이터 포인트는 그대로 유지, 시야만 0–5s로 고정. 임상 protocol 표준 윈도우. |
+| Timezone | Dockerfile에 `ENV TZ=Asia/Seoul` + `JAVA_TOOL_OPTIONS`에 `-Duser.timezone=Asia/Seoul`. 백엔드의 `LocalDateTime.now()`가 Seoul wall-clock 발행 → 프론트의 `formatStart` "+09:00" 가정과 일치. |
+| Flexion/Extension pair label (display-only) | `lib/pairLabel.ts` 신설. 환자의 chronological 세션 인덱스 짝수=flexion, 홀수=extension. SessionList 각 row + ComparisonFigure PeakRow에 배지 표시. `session.pair.flexion`/`session.pair.extension` i18n 키. |
+
+### 8.14.2 Future work — 디바이스 contract 확장 (T51+)
+
+현재 flexion/extension은 **표시 전용 추정** 입니다. 실제 motion 정보를 디바이스/앱이 보내지 않고, 단순히 "측정이 짝수로 들어오면 첫 번째가 flexion, 두 번째가 extension" 이라는 임상 워크플로 관례에 의존합니다. 한계:
+
+- 단발 측정 / 한쪽만 측정한 케이스는 잘못된 라벨이 붙음
+- 측정 순서가 뒤집힌 경우 (extension 먼저) 라벨이 뒤바뀜
+- 비교 페이지에서 flexion vs extension을 섞어 비교해도 시스템이 막지 못함
+
+구조적 해결:
+
+1. **디바이스/앱 contract 확장**: `POST /measurements/start` body에 `motion: "flexion" | "extension"` 추가. 동결 contract 변경이므로 디바이스 펌웨어 + Flutter 앱 + 백엔드 + 프론트 동반 배포 필요.
+2. **DB 스키마**: `Measurement` 엔티티에 `motion` enum 컬럼 추가. Flyway 마이그레이션. 기존 row는 NULL → "unknown" 또는 backfill.
+3. **백엔드**: DTO + service 패스스루.
+4. **프론트엔드**: `pairLabel.ts` 삭제, motion을 `MeasurementSummary`에서 직접 읽기. ComparisonFigure에서 동일 motion끼리만 비교 가능하도록 UX 가드 (현재는 무제한).
+
+본 phase에서는 시연 시급성으로 인해 표시 전용 라벨로만 처리. 운영 도입 전 반드시 구조적 해결 필요.

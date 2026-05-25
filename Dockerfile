@@ -36,6 +36,13 @@ RUN chmod +x ./gradlew \
 FROM eclipse-temurin:17-jre-jammy AS runtime
 # Non-root for runtime hygiene even though the Fly.io container is short-lived.
 RUN useradd --system --create-home --uid 10001 spring
+# Asia/Seoul timezone — backend writes LocalDateTime wall-clock values that
+# the frontend interprets as Seoul-local (formatStart appends "+09:00").
+# Fly machines default to UTC, which would offset the demo timestamps by 9h.
+# tzdata ships in the jammy base image; setting both env vars covers
+# JVM lookups (user.timezone via JAVA_TOOL_OPTIONS) and any glibc / shell
+# call (TZ env).
+ENV TZ=Asia/Seoul
 WORKDIR /home/spring
 COPY --from=backend --chown=spring:spring /app/app.jar /home/spring/app.jar
 # Bridge Fly's DATABASE_URL → DB_URL/DB_USERNAME/DB_PASSWORD (libpq → JDBC).
@@ -43,6 +50,6 @@ COPY --from=backend --chown=spring:spring /app/app.jar /home/spring/app.jar
 COPY --chown=spring:spring --chmod=0755 docker/entrypoint.sh /home/spring/entrypoint.sh
 USER spring
 # Defaults set here; Fly.io overrides via fly secrets (DB_*, CORS_ALLOWED_ORIGINS).
-ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75 -XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError"
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75 -XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError -Duser.timezone=Asia/Seoul"
 EXPOSE 8080
 ENTRYPOINT ["/home/spring/entrypoint.sh"]

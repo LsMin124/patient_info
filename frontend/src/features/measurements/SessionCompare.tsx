@@ -12,6 +12,7 @@ import { usePatientsQuery } from '../patients/usePatients'
 import { ComparisonFigure } from './ComparisonFigure'
 import { OverlayChart, paletteColor, type OverlaySeries } from './OverlayChart'
 import { countValidIdSegments, MAX_COMPARE_IDS, parseCompareIds } from './lib/compareIds'
+import { pairMotionForIndex, type PairMotion } from './lib/pairLabel'
 import { computeSessionStats } from './lib/stats'
 import type { DataPoint, MeasurementSummary } from './schema'
 import { useDataPointsQuery, useSessionsQuery } from './useMeasurements'
@@ -189,9 +190,19 @@ function CompareLoader({
       peak: number | null
       impulse: number | null
     }> = []
+    // Pair (flexion/extension) label is derived from each measurement's
+    // chronological position in the patient's full session list. See
+    // IMPL_SPEC §8.14 — replaced by an explicit device-side motion field
+    // in a future contract revision.
+    const chronological = [...sessionsAll].sort((a, b) => a.startTime.localeCompare(b.startTime))
+    const pairOf = (mid: number): PairMotion => {
+      const idx = chronological.findIndex((s) => s.measurementId === mid)
+      return pairMotionForIndex(idx < 0 ? 0 : idx)
+    }
     const pairCandidates: Array<{
       meta: MeasurementSummary
       points: ReadonlyArray<DataPoint>
+      pair: PairMotion
     }> = []
     ids.forEach((id, i) => {
       const points = (dataQueries[i]?.data ?? []) as ReadonlyArray<DataPoint>
@@ -206,7 +217,7 @@ function CompareLoader({
         peak: stats.peakN,
         impulse: stats.impulseNs,
       })
-      if (meta) pairCandidates.push({ meta, points })
+      if (meta) pairCandidates.push({ meta, points, pair: pairOf(id) })
     })
     // Figure pair: only when exactly two sessions and BOTH have resolved
     // metadata + non-empty data. Baseline = earlier startTime.
