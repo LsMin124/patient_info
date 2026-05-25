@@ -67,6 +67,8 @@ export const en: Translations = {
       visitNeedExactlyTwoHint:
         'Select exactly two visits to compare flexion and extension side by side.',
       partialVisit: 'Flexion only',
+      selectSessionsHint: 'Select 2–4 sessions to compare. Pick whole visits for paired view.',
+      sessionSelectAria: 'Select measurement #{id} for comparison',
     },
     detail: {
       notFound: 'Session not found',

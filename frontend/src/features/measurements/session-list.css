@@ -19,7 +19,9 @@
   gap: var(--space-3);
 }
 
-/* Visit card — wraps one flex+ext pair as a single clinical event. */
+/* Visit card — wraps one flex+ext pair as a single clinical event. The
+   user can either tick the visit-level checkbox (selects both motions)
+   or tick individual motion checkboxes for unpaired / legacy data. */
 .session-list__visit {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -40,16 +42,16 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  cursor: pointer;
   margin-bottom: var(--space-2);
 }
 
-.session-list__visit-header input[type='checkbox'] {
+.session-list__visit-checkbox {
   width: 1.15rem;
   height: 1.15rem;
+  cursor: pointer;
 }
 
-.session-list__visit-header input[type='checkbox']:disabled {
+.session-list__visit-checkbox:disabled {
   cursor: not-allowed;
   opacity: 0.4;
 }
@@ -80,20 +82,57 @@
   padding-left: calc(1.15rem + var(--space-3));
 }
 
+/* Motion row = [checkbox] [link]. The checkbox toggles compare selection
+   for just this measurement; the link still navigates to the detail page,
+   so clicking either is unambiguous. */
 .session-list__motion {
   display: grid;
-  grid-template-columns: 5rem 1fr auto;
+  grid-template-columns: auto 1fr;
   gap: var(--space-3);
-  align-items: baseline;
-  text-decoration: none;
-  color: inherit;
-  padding: var(--space-2) var(--space-3);
+  align-items: center;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   transition: background var(--duration-fast) var(--ease-out-expo);
 }
 
 .session-list__motion:hover {
   background: var(--color-surface-raised);
+}
+
+.session-list__motion--selected {
+  background: var(--color-surface-raised);
+}
+
+.session-list__motion-checkbox {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+.session-list__motion-checkbox:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.session-list__motion-link {
+  display: grid;
+  grid-template-columns: 5rem 4rem 1fr auto;
+  gap: var(--space-3);
+  align-items: baseline;
+  text-decoration: none;
+  color: inherit;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+}
+
+.session-list__motion-link:hover {
+  background: var(--color-surface-raised);
+}
+
+.session-list__motion-id {
+  color: var(--color-fg-muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .session-list__memo {
@@ -141,4 +180,5 @@
 .session-list__compare-hint {
   color: var(--color-fg-muted);
   font-size: 0.9rem;
+  margin: 0;
 }

@@ -68,6 +68,8 @@ export interface Translations {
       visitLabel: string
       visitNeedExactlyTwoHint: string
       partialVisit: string
+      selectSessionsHint: string
+      sessionSelectAria: string
     }
     detail: {
       notFound: string

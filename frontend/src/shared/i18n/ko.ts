@@ -66,6 +66,9 @@ export const ko: Translations = {
       visitLabel: '{n}회차 내원',
       visitNeedExactlyTwoHint: '굴곡/신전을 같이 비교하려면 두 회차의 내원을 선택하세요.',
       partialVisit: '굴곡만 측정',
+      selectSessionsHint:
+        '비교할 세션을 2–4개 선택하세요. 한 내원 전체를 고르면 페어 뷰가 나타납니다.',
+      sessionSelectAria: '측정 #{id} 비교 선택',
     },
     detail: {
       notFound: '세션을 찾을 수 없습니다',

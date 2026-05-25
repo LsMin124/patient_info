@@ -7,6 +7,7 @@ import { EmptyState } from '../../shared/ui/EmptyState'
 import { ErrorFallback } from '../../shared/ui/ErrorFallback'
 import { Skeleton } from '../../shared/ui/Loading'
 
+import { MAX_COMPARE_IDS } from './lib/compareIds'
 import { groupIntoVisits, type Visit } from './lib/visits'
 import { useSessionsQuery } from './useMeasurements'
 
@@ -27,19 +28,26 @@ const dateFmt = new Intl.DateTimeFormat('ko-KR', {
 })
 
 /**
- * Per-patient visit timeline. Sessions are grouped into visits — flexion +
- * extension as one clinical set (see IMPL_SPEC §8.14). Each visit card
- * carries a single checkbox; selecting two visits navigates to
- * /sessions/compare?ids=oldFlex,oldExt,newFlex,newExt which renders the
- * paired figure (flex-vs-flex stacked over ext-vs-ext).
+ * Per-patient session timeline grouped into visits (flexion + extension as
+ * one clinical set — see IMPL_SPEC §8.14). Selection is at the MEASUREMENT
+ * level, not the visit level: each motion row has its own checkbox so
+ * legacy / unpaired data (e.g. a clinic that recorded individual single
+ * measurements before adopting the flex/ext protocol) can still be
+ * compared two-by-two. The visit-level checkbox is a convenience that
+ * toggles every measurement in that visit at once.
+ *
+ * Compare routing (see SessionCompare):
+ *   - 2 ids → ComparisonFigure (single-motion hero)
+ *   - 4 ids forming 2 complete visits → VisitComparison (stacked hero)
+ *   - 3 ids OR 4 ids not pairing cleanly → multi-overlay table
  */
 export function SessionList({ patientId }: SessionListProps) {
   const { t } = useT()
   const query = useSessionsQuery(patientId)
-  const [selectedVisit, setSelectedVisit] = useState<ReadonlySet<number>>(new Set())
+  const [selectedIds, setSelectedIds] = useState<ReadonlySet<number>>(new Set())
 
-  // Newest visit first for the UI. Order doesn't affect the visitNumber
-  // which is assigned chronologically by groupIntoVisits.
+  // Newest visit first for the UI; visitNumber itself is assigned
+  // chronologically (1 = earliest).
   const visitsDesc = useMemo(() => {
     const visits = groupIntoVisits(query.data ?? [])
     return [...visits].sort((a, b) => b.visitNumber - a.visitNumber)
@@ -72,25 +80,25 @@ export function SessionList({ patientId }: SessionListProps) {
     return <EmptyState title={t('session.list.empty')} description={t('session.list.emptyHint')} />
   }
 
-  const toggleVisit = (visitNumber: number) => {
-    setSelectedVisit((prev) => {
+  const toggleMeasurement = (mid: number) => {
+    setSelectedIds((prev) => {
       const next = new Set(prev)
-      if (next.has(visitNumber)) next.delete(visitNumber)
-      else next.add(visitNumber)
+      if (next.has(mid)) next.delete(mid)
+      else if (next.size < MAX_COMPARE_IDS) next.add(mid)
       return next
     })
   }
 
-  const selectedComplete = [...selectedVisit]
-    .map((vn) => visitsDesc.find((v) => v.visitNumber === vn))
-    .filter((v): v is Visit => v !== undefined && v.extension !== null)
-  const canCompare = selectedComplete.length === 2
-  const idsForCompare = canCompare
-    ? selectedComplete
-        .sort((a, b) => a.visitNumber - b.visitNumber)
-        .flatMap((v) => [v.flexion.measurementId, v.extension!.measurementId])
-        .join(',')
-    : ''
+  // Build the URL: ids ordered oldest-first so SessionCompare's visit-pair
+  // detection (baselineVisit = older, followupVisit = newer) lines up
+  // automatically when the user picked two complete visits.
+  const allChronological = (query.data ?? [])
+    .slice()
+    .sort((a, b) => a.startTime.localeCompare(b.startTime))
+  const idsForCompare = allChronological
+    .map((s) => s.measurementId)
+    .filter((mid) => selectedIds.has(mid))
+  const canCompare = idsForCompare.length >= 2 && idsForCompare.length <= MAX_COMPARE_IDS
 
   return (
     <section className="session-list" aria-label={t('session.list.title')}>
@@ -100,28 +108,31 @@ export function SessionList({ patientId }: SessionListProps) {
             key={v.visitNumber}
             patientId={patientId}
             visit={v}
-            isSelected={selectedVisit.has(v.visitNumber)}
-            onToggle={() => toggleVisit(v.visitNumber)}
+            selectedIds={selectedIds}
+            onToggleMeasurement={toggleMeasurement}
+            maxReached={selectedIds.size >= MAX_COMPARE_IDS}
           />
         ))}
       </ul>
-      {selectedVisit.size > 0 && (
+      {selectedIds.size > 0 && (
         <nav className="session-list__compare" aria-label="compare">
           {canCompare ? (
-            <Link to={`/sessions/compare?ids=${idsForCompare}`}>
+            <Link to={`/sessions/compare?ids=${idsForCompare.join(',')}`}>
               <Button>
-                {t('session.list.compareSelected').replace(
-                  '{count}',
-                  String(selectedComplete.length),
-                )}
+                {t('session.list.compareSelected').replace('{count}', String(idsForCompare.length))}
               </Button>
             </Link>
           ) : (
             <span className="session-list__compare-hint" role="status">
-              {t('session.list.visitNeedExactlyTwoHint')}
+              {t('session.list.selectSessionsHint')}
             </span>
           )}
         </nav>
+      )}
+      {selectedIds.size === 0 && (
+        <p className="session-list__compare-hint" role="note">
+          {t('session.list.selectSessionsHint')}
+        </p>
       )}
     </section>
   )
@@ -130,27 +141,53 @@ export function SessionList({ patientId }: SessionListProps) {
 interface VisitCardProps {
   patientId: string
   visit: Visit
-  isSelected: boolean
-  onToggle: () => void
+  selectedIds: ReadonlySet<number>
+  onToggleMeasurement: (mid: number) => void
+  maxReached: boolean
 }
 
-function VisitCard({ patientId, visit, isSelected, onToggle }: VisitCardProps) {
+function VisitCard({
+  patientId,
+  visit,
+  selectedIds,
+  onToggleMeasurement,
+  maxReached,
+}: VisitCardProps) {
   const { t } = useT()
   const visitTitle = t('session.list.visitLabel').replace('{n}', String(visit.visitNumber))
   const partial = visit.extension === null
 
+  const visitMids = partial
+    ? [visit.flexion.measurementId]
+    : [visit.flexion.measurementId, visit.extension!.measurementId]
+  const allSelected = visitMids.every((mid) => selectedIds.has(mid))
+  const anySelected = visitMids.some((mid) => selectedIds.has(mid))
+  // "Select both" — if all currently selected, deselect all; otherwise
+  // select the ones that aren't already (respecting max cap).
+  const toggleVisitGroup = () => {
+    if (allSelected) {
+      visitMids.forEach((mid) => onToggleMeasurement(mid))
+    } else {
+      visitMids.filter((mid) => !selectedIds.has(mid)).forEach((mid) => onToggleMeasurement(mid))
+    }
+  }
+  const cardSelected = anySelected
+
   return (
-    <li className={`session-list__visit${isSelected ? ' session-list__visit--selected' : ''}`}>
-      <label className="session-list__visit-header">
+    <li className={`session-list__visit${cardSelected ? ' session-list__visit--selected' : ''}`}>
+      <div className="session-list__visit-header">
         <input
           type="checkbox"
-          checked={isSelected}
-          onChange={onToggle}
+          className="session-list__visit-checkbox"
+          checked={allSelected}
+          ref={(el) => {
+            if (el) el.indeterminate = anySelected && !allSelected
+          }}
+          onChange={toggleVisitGroup}
           aria-label={t('session.list.compareSelectAria').replace(
             '{id}',
             String(visit.visitNumber),
           )}
-          disabled={partial}
         />
         <span className="session-list__visit-number">{visitTitle}</span>
         <time className="session-list__visit-date" dateTime={visit.startTime}>
@@ -159,13 +196,16 @@ function VisitCard({ patientId, visit, isSelected, onToggle }: VisitCardProps) {
         {partial && (
           <span className="session-list__visit-partial">{t('session.list.partialVisit')}</span>
         )}
-      </label>
+      </div>
       <div className="session-list__visit-rows">
         <VisitMotionRow
           patientId={patientId}
           session={visit.flexion}
           motion="flexion"
           label={t('session.pair.flexion')}
+          isSelected={selectedIds.has(visit.flexion.measurementId)}
+          maxReached={maxReached}
+          onToggle={() => onToggleMeasurement(visit.flexion.measurementId)}
         />
         {visit.extension && (
           <VisitMotionRow
@@ -173,6 +213,9 @@ function VisitCard({ patientId, visit, isSelected, onToggle }: VisitCardProps) {
             session={visit.extension}
             motion="extension"
             label={t('session.pair.extension')}
+            isSelected={selectedIds.has(visit.extension.measurementId)}
+            maxReached={maxReached}
+            onToggle={() => onToggleMeasurement(visit.extension!.measurementId)}
           />
         )}
       </div>
@@ -185,26 +228,51 @@ interface VisitMotionRowProps {
   session: { measurementId: number; endTime: string | null; memo: string | null }
   motion: 'flexion' | 'extension'
   label: string
+  isSelected: boolean
+  maxReached: boolean
+  onToggle: () => void
 }
 
-function VisitMotionRow({ patientId, session, motion, label }: VisitMotionRowProps) {
+function VisitMotionRow({
+  patientId,
+  session,
+  motion,
+  label,
+  isSelected,
+  maxReached,
+  onToggle,
+}: VisitMotionRowProps) {
   const { t } = useT()
   const inProgress = session.endTime === null
   return (
-    <Link
-      to={`/patients/${patientId}/sessions/${session.measurementId}`}
-      className={`session-list__motion session-list__motion--${motion}`}
+    <div
+      className={`session-list__motion session-list__motion--${motion}${isSelected ? ' session-list__motion--selected' : ''}`}
     >
-      <span className={`session-list__pair session-list__pair--${motion}`}>{label}</span>
-      <span className="session-list__memo">{session.memo ?? t('session.list.noMemo')}</span>
-      {inProgress && <span className="session-list__badge">{t('session.list.inProgress')}</span>}
-    </Link>
+      <input
+        type="checkbox"
+        className="session-list__motion-checkbox"
+        checked={isSelected}
+        disabled={!isSelected && maxReached}
+        onChange={onToggle}
+        aria-label={t('session.list.sessionSelectAria').replace(
+          '{id}',
+          String(session.measurementId),
+        )}
+      />
+      <Link
+        to={`/patients/${patientId}/sessions/${session.measurementId}`}
+        className="session-list__motion-link"
+      >
+        <span className={`session-list__pair session-list__pair--${motion}`}>{label}</span>
+        <span className="session-list__motion-id">#{session.measurementId}</span>
+        <span className="session-list__memo">{session.memo ?? t('session.list.noMemo')}</span>
+        {inProgress && <span className="session-list__badge">{t('session.list.inProgress')}</span>}
+      </Link>
+    </div>
   )
 }
 
 function formatStart(iso: string): string {
-  // The wire is a LocalDateTime without timezone. The backend's JDBC URL
-  // pins server timezone to Asia/Seoul, so we render in the same zone.
   const date = new Date(`${iso}+09:00`)
   if (Number.isNaN(date.valueOf())) return iso
   return dateFmt.format(date)
